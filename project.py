@@ -16,65 +16,74 @@ def write_file(file_name, result):
         f.write(str(i)+'\n')
     return
 
-def training(training_data):
+def show_data(data):
     #print training_data[0]
-    #for i in range(1,15):
-    #    print training_data[i][0:6], training_data[i][13]
-    #    print training_data[i][6:12]
-    #    print training_data[i][12:17]
-    #    print training_data[i][17:19]
-    #    print "------------------------------------"
+    for i in range(1,15):
+        print data[i][0:6] #, training_data[i][13]
+        print data[i][len(data[i])-2].split("~~")
+        print data[i][len(data[i])-1].split("~~")
+        #print training_data[i][6:12]
+        #print training_data[i][12:17]
+        #print training_data[i][17:19]
+        print "------------------------------------"
+    return
+
+def training(training_data):
+    show_data(training_data)
     student_result = {}
     overall_result = {}
     for i in range(1,len(training_data)):
         studentId = training_data[i][1]
         problem_hierarchy = training_data[i][2]
         problem_name = training_data[i][3]
+        step_name = training_data[i][5]
 
         is_first_correct = training_data[i][13]
 
         student = student_result.setdefault(studentId, {})
-        problem_result = student.setdefault(problem_hierarchy,{}).setdefault(problem_name,{})
+        problem_result = student.setdefault(problem_hierarchy,{}).setdefault(problem_name,{}).setdefault(step_name, {})
         current_result = problem_result.setdefault(is_first_correct, 0)
         problem_result[is_first_correct] = current_result + 1
 
-        problem_result = overall_result.setdefault(problem_hierarchy,{}).setdefault(problem_name,{})
+        problem_result = overall_result.setdefault(problem_hierarchy,{}).setdefault(problem_name,{}).setdefault(step_name, {})
         current_result = problem_result.setdefault(is_first_correct, 0)
         problem_result[is_first_correct] = current_result + 1
     return student_result, overall_result
 
-def get_result_by_question(student, problem_hierarchy, problem_name):
-    correct = student[problem_hierarchy][problem_name].setdefault('1',0.0)
-    incorrect = student[problem_hierarchy][problem_name].setdefault('0',0.0)
-    return correct, incorrect
-
-def get_result_by_topic(student, problem_hierarchy):
-    questions = student[problem_hierarchy]
-    correct = sum([ questions[name].setdefault('1',0.0) for name in questions])
-    incorrect = sum([ questions[name].setdefault('0',0.0) for name in questions])
+def get_result_by_stepname(student, problem_hierarchy, problem_name, step_name):
+    if problem_hierarchy in student:
+        problems = student[problem_hierarchy]
+        if problem_name in problems:
+            steps = problems[problem_name]
+            if step_name in steps:
+                correct = steps[step_name].setdefault('1',0.0)
+                incorrect = steps[step_name].setdefault('0',0.0)
+            else:
+                correct = sum([ steps[name].setdefault('1',0.0) for name in steps])
+                incorrect = sum([ steps[name].setdefault('0',0.0) for name in steps])
+        else:
+            correct = sum([ sum([ problems[name][step].setdefault('1',0.0) for step in problems[name]]) for name in problems])
+            incorrect = sum([ sum([ problems[name][step].setdefault('0',0.0) for step in problems[name]]) for name in problems])
+    else:
+        raise KeyError(problem_hierarchy)
     return correct, incorrect
 
 def predict(student_result, overall_result, testing_data):
+    #show_data(testing_data)
     predict_result = []
     for i in range(1,len(testing_data)):
 
         studentId = testing_data[i][1]
         problem_hierarchy = testing_data[i][2]
         problem_name = testing_data[i][3]
+        step_name = testing_data[i][5]
 
         try:
             student = student_result[studentId]
-            correct, incorrect = get_result_by_question(student,problem_hierarchy,problem_name)
+            correct, incorrect = get_result_by_stepname(student, problem_hierarchy, problem_name, step_name)
         except KeyError:
-            try:
-                student = student_result[studentId]
-                correct, incorrect = get_result_by_topic(student,problem_hierarchy)
-            except KeyError:
-                try:
-                    correct, incorrect = get_result_by_question(overall_result, problem_hierarchy, problem_name)
-                except KeyError:
-                    correct, incorrect = get_result_by_topic(overall_result, problem_hierarchy)
-
+            correct, incorrect = get_result_by_stepname(overall_result, problem_hierarchy, problem_name, step_name)
+        # print studentId, problem_hierarchy, problem_name, step_name
         predict = float(correct) / (correct + incorrect)
 
         # a = min(correct_count,incorrect_count)
