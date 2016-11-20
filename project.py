@@ -5,6 +5,7 @@ import os.path
 import operator
 import math
 import random
+import re
 
 def read_file(file_name):
     f = open(file_name, 'rb')
@@ -27,10 +28,27 @@ def load_data(dataset):
     testing_result_data = read_file(testing_result_name)
     return training_data, testing_data, testing_result_data
 
+def process_step_name(step_name):
+    step_name = re.sub(r'\s', '', step_name)
+    step_name = re.sub(r'[a-z]+', '{var}', step_name)
+    step_name = re.sub(r'[0-9]+\.[0-9]+', '{d}', step_name)
+    step_name = re.sub(r'[0-9]+', '{d}', step_name)
+    step_name = re.sub(r'^-\{d\}', '{d}', step_name)
+    step_name = re.sub(r'^-\{var\}', '{var}', step_name)
+    step_name = re.sub(r'\/-\{var\}}', '/{var}', step_name)
+    step_name = re.sub(r'\/-\{d\}', '/{d}', step_name)
+    step_name = re.sub(r'\*-\{d\}', '*{d}', step_name)
+    step_name = re.sub(r'\*-\{var\}', '*{var}', step_name)
+    step_name = re.sub(r'=-\{d\}', '={d}', step_name)
+    step_name = re.sub(r'\(-\{d\}', '({d}', step_name)
+    step_name = re.sub(r'\(-\{var\}', '({var}', step_name)
+    return step_name
+
 def show_data(data):
     #print training_data[0]
     for i in range(1,15):
         print data[i][0:6] #, training_data[i][13]
+        print data[i][2].split(", ")
         print data[i][len(data[i])-2].split("~~")
         print data[i][len(data[i])-1].split("~~")
         #print training_data[i][6:12]
