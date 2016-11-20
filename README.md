@@ -29,3 +29,16 @@ python random_method.py bridge_to_algebra_2006_2007
 | algebra_2005_2006 | 0.577339348465 | 0.578375289713 |
 | algebra_2006_2007 | 0.577176770545 | 0.581733462971 |
 | bridge_to_algebra_2006_2007 | 0.577114504595 | 0.578898326215 |
+
+## Prob
+```sh
+# Feature : student, problem_hierarchy, problem_name, step_name
+python prob.py algebra_2005_2006
+python prob.py algebra_2006_2007
+python prob.py bridge_to_algebra_2006_2007
+```
+| Dataset      | Training    | Testing  |
+| -------------|-------------|----------|
+| algebra_2005_2006 | 0.0967046609696 | 0.428231473278 |
+| algebra_2006_2007 | 0.0547122669775 | 0.405192314582 |
+| bridge_to_algebra_2006_2007 | 0.0290291660401 | 0.376496202217 |
