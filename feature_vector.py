@@ -6,28 +6,29 @@ from project import load_data, show_data, rmse, process_step_name
 from sklearn import svm
 from sklearn import linear_model
 
-def get_feature_vector(element_set, value_set):
+def get_feature_vector(element_set, value_set, w=1.0):
     result = [0.0] * len(element_set)
     for val in value_set:
         if val in element_set :
-            result[element_set.index(val)] = 1.0
+            result[element_set.index(val)] = w
     return result
 
 def get_feature_vectors(dataset, N, studentId_list, section_list, unit_list, problem_name_list, step_name_list, kc_list):
     rows = []
     for i in range(1,N):
-        student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]])
+        student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]],100)
 
         section, unit = dataset[i][2].split(", ")
 
-        section_feature = get_feature_vector(section_list,[section])
-        unit_feature = get_feature_vector(unit_list,[unit])
+        section_feature = get_feature_vector(section_list,[section], 50)
+        unit_feature = get_feature_vector(unit_list,[unit],25)
 
         problem_name_feature = get_feature_vector(problem_name_list,[dataset[i][3]])
         problem_view_feature = [float(dataset[i][4])]
 
-        step_name_feature = get_feature_vector(step_name_list,[process_step_name(dataset[i][5])])
-
+        p_step = process_step_name(dataset[i][5])
+        step_name_feature = [ p_step.count('+'),p_step.count('-'),p_step.count('*'),p_step.count('/'),p_step.count('='),p_step.count('{var}')+p_step.count('{d}') ]
+        #print step_name_feature
         kc_feature = get_feature_vector(kc_list, dataset[i][len(dataset[i])-2].split("~~") )
         o = dataset[i][len(dataset[i])-1].split("~~")
 
@@ -45,7 +46,7 @@ def process_data(training_data, testing_data):
     is_first_correct_list = []
     kc_list = []
     testing_rows = []
-    N = 60000 #len(training_data)
+    N = 50000 #len(training_data)
     for i in range(1,N):
         studentId = training_data[i][1]
         section, unit = training_data[i][2].split(", ")
@@ -86,9 +87,9 @@ def main(arg):
     rows, is_first_correct_list, testing_rows = process_data(training_data, testing_data)
     print len(rows),len(is_first_correct_list),len(testing_rows),len(rows[0])
 
-    clf = linear_model.SGDClassifier(n_jobs=2)
+    #clf = linear_model.SGDClassifier(n_jobs=2,n_iter=10)
 
-    #clf = svm.SVC(gamma=0.001, C=100., verbose=True)
+    clf = svm.SVC(gamma=0.001, C=100., verbose=True)
     clf.fit(rows, is_first_correct_list)
     print clf
     predict_result = clf.predict(rows)

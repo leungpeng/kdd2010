@@ -42,3 +42,11 @@ python prob.py bridge_to_algebra_2006_2007
 | algebra_2005_2006 | 0.0967046609696 | 0.428231473278 |
 | algebra_2006_2007 | 0.0547122669775 | 0.405192314582 |
 | bridge_to_algebra_2006_2007 | 0.0290291660401 | 0.376496202217 |
+
+## SVM
+```
+python feature_vector.py algebra_2005_2006
+```
+| Dataset      | Training    | Testing  | Size|Running Time|
+| -------------|-------------|----------|-----|------------|
+| algebra_2005_2006 | 0.395655318254 | 0.463706747382 |50000|~30 min|
