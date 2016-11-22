@@ -16,11 +16,12 @@ def training(training_data):
         is_first_correct = training_data[i][13]
 
         kcs = training_data[i][len(training_data[i])-2].upper().split("~~")
+        o = training_data[i][len(training_data[i])-1].split("~~")
 
-        for kc_name in kcs:
+        for idx, kc_name in enumerate(kcs):
             kc_result = student_kc.setdefault(studentId, {}).setdefault(kc_name,{})
-            current_result = kc_result.setdefault(is_first_correct, 0)
-            kc_result[is_first_correct] = current_result + 1
+            current_result = kc_result.setdefault(is_first_correct, 0.0)
+            kc_result[is_first_correct] = current_result + float(o[idx])
 
         student = student_result.setdefault(studentId, {})
         problem_result = student.setdefault(problem_hierarchy,{}).setdefault(problem_name,{}).setdefault(step_name, {})
@@ -55,7 +56,8 @@ def get_predict_result_by_kc(student, kc_name):
     if kc_name in student:
         correct = student[kc_name].setdefault('1',0.0)
         incorrect = student[kc_name].setdefault('0',0.0)
-        result = correct / (correct+incorrect)
+        if (correct + incorrect) > 0:
+            result = correct / (correct + incorrect)
     return result
 
 def predict(student_result, overall_result, student_kc, testing_data):

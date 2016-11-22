@@ -43,6 +43,15 @@ python prob.py bridge_to_algebra_2006_2007
 | algebra_2006_2007 | 0.0547102543474 | 0.403950930702 |
 | bridge_to_algebra_2006_2007 | 0.0290279956492 | 0.371627041609 |
 
+```sh
+# Feature : student, problem_hierarchy, problem_name, step_name, kc, opportunity
+```
+| Dataset      | Training    | Testing  |
+| -------------|-------------|----------|
+| algebra_2005_2006 | 0.337000977608 | 0.42186015689 |
+| algebra_2006_2007 | 0.335781933001 | 0.3990621855 |
+| bridge_to_algebra_2006_2007 | 0.261519231749 | 0.357504131339 |
+
 ## SVM
 ```
 python feature_vector.py algebra_2005_2006
