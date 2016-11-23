@@ -52,10 +52,12 @@ python prob.py bridge_to_algebra_2006_2007
 | algebra_2006_2007 | 0.335781933001 | 0.3990621855 |
 | bridge_to_algebra_2006_2007 | 0.261519231749 | 0.357504131339 |
 
-## SVM
+## Feature vector based method
 ```
 python feature_vector.py algebra_2005_2006
 ```
-| Dataset      | Training    | Testing  | Size|Running Time|
-| -------------|-------------|----------|-----|------------|
-| algebra_2005_2006 | 0.395655318254 | 0.463706747382 |50000|~30 min|
+| Dataset      | Method  | Training    | Testing  | Size|Training Time|Predict Time
+| -------------|---------|-------------|----------|-----|------------|------------|
+| algebra_2005_2006 | SVM |0.395655318254 | 0.463706747382 |50000|~30 min|     |
+| algebra_2005_2006 | KNN | 0.332238179089 | 0.517161982612 |50000| 9 sec| 17 sec  |
+
