@@ -32,16 +32,16 @@ python random_method.py bridge_to_algebra_2006_2007
 
 ## Prob
 ```sh
-# Feature : student, problem_hierarchy, problem_name, step_name, kc
+# Feature : student, problem_hierarchy, problem_name, step_name, kc, opportunity
 python prob.py algebra_2005_2006
 python prob.py algebra_2006_2007
 python prob.py bridge_to_algebra_2006_2007
 ```
-| Dataset      | Training    | Testing  |
-| -------------|-------------|----------|
-| algebra_2005_2006 | 0.0970676740172 | 0.427699903868 |
-| algebra_2006_2007 | 0.0547102543474 | 0.403950930702 |
-| bridge_to_algebra_2006_2007 | 0.0290279956492 | 0.371627041609 |
+| Dataset      | Training    | Testing  |Time|
+| -------------|-------------|----------|----|
+| algebra_2005_2006 | 0.0967263175545 | 0.426565287948 |0m52.609s|
+| algebra_2006_2007 | 0.0541229228797 | 0.40384679442 |2m17.756s|
+| bridge_to_algebra_2006_2007 | 0.0288237930397 | 0.372662133708 |11m34.139s|
 
 ```sh
 # Feature : student, problem_hierarchy, problem_name, step_name, kc, opportunity
