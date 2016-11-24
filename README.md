@@ -52,7 +52,7 @@ python prob.py bridge_to_algebra_2006_2007
 | algebra_2006_2007 | 0.335781933001 | 0.3990621855 |
 | bridge_to_algebra_2006_2007 | 0.261519231749 | 0.357504131339 |
 
-## Feature vector based method
+## (1) Feature vector based method (OneHotEncoding)
 ```
 python feature_vector.py algebra_2005_2006
 ```
@@ -61,4 +61,13 @@ python feature_vector.py algebra_2005_2006
 | algebra_2005_2006 | SVM |0.395655318254 | 0.463706747382 |50k|~30 min|     |
 | algebra_2005_2006 | KNN(k=10) | 0.332238179089 | 0.517161982612 |50k| 9 sec| 17 sec  |
 | algebra_2005_2006 | KNN(k=20) | 0.324500426044 | 0.46722690752 |200k| 147 sec| 558 sec  |
-| algebra_2005_2006 | RandomForest | 0.319 | 0.607 |50k| 5.7 sec| 0.8 sec  |
+| algebra_2005_2006 | RandomForest(n=50) | 0.319 | 0.607 |50k| 5.7 sec| 0.8 sec  |
+
+## (2) Feature vector based method (unique key for each column, distance between vectors are not defined)
+```
+python feature_vector.py algebra_2005_2006
+```
+| Dataset      | Method  | Training    | Testing  | Size|Training Time|Predict Time
+| -------------|---------|-------------|----------|-----|------------|------------|
+| algebra_2005_2006 | RandomForest(n=50) |  0.282914828894 | 0.562234728644 |100k| 1.3 sec| 0.4 sec  |
+| algebra_2005_2006 | MultinomialNB |  0.61850935768 | 0.563801780499 |100k| 0.09 sec| 0.05 sec  |
