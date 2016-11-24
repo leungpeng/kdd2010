@@ -58,6 +58,7 @@ python feature_vector.py algebra_2005_2006
 ```
 | Dataset      | Method  | Training    | Testing  | Size|Training Time|Predict Time
 | -------------|---------|-------------|----------|-----|------------|------------|
-| algebra_2005_2006 | SVM |0.395655318254 | 0.463706747382 |50000|~30 min|     |
-| algebra_2005_2006 | KNN | 0.332238179089 | 0.517161982612 |50000| 9 sec| 17 sec  |
-| algebra_2005_2006 | RandomForest | 0.319 | 0.607 |50000| 5.7 sec| 0.8 sec  |
+| algebra_2005_2006 | SVM |0.395655318254 | 0.463706747382 |50k|~30 min|     |
+| algebra_2005_2006 | KNN(k=10) | 0.332238179089 | 0.517161982612 |50k| 9 sec| 17 sec  |
+| algebra_2005_2006 | KNN(k=20) | 0.324500426044 | 0.46722690752 | |200k| 147 sec| 558 sec  |
+| algebra_2005_2006 | RandomForest | 0.319 | 0.607 |50k| 5.7 sec| 0.8 sec  |
