@@ -71,7 +71,7 @@ python feature_vector.py algebra_2005_2006
 | Dataset      | Method  | Training    | Testing  | Size|Training Time|Predict Time
 | -------------|---------|-------------|----------|-----|------------|------------|  |
 | algebra_2005_2006 | KNN(k=40) | 0.139213460584 | 0.481050023681 |50k| 15 sec| 73 sec  |
-| algebra_2005_2006 | KNN(k=200) | | 0.137313853181 | 0.451867815084 |200k| 175 sec| 1774 sec  |
+| algebra_2005_2006 | KNN(k=200) | 0.137313853181 | 0.451867815084 |200k| 175 sec| 1774 sec  |
 
 
 ## (2) Feature vector based method (unique key for each column, distance between vectors are not defined)
