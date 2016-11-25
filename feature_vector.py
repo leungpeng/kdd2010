@@ -4,7 +4,7 @@ import sys
 import random
 import gc
 import time
-from project import write_file, load_data, show_data, rmse, process_step_name
+from project import write_file, load_data, show_data, rmse, process_step_name, process_problem_name
 from sklearn import svm
 from sklearn import linear_model
 from sklearn.neighbors import KNeighborsClassifier
@@ -16,6 +16,18 @@ from sklearn import tree
 import os
 import psutil
 from sklearn.metrics import jaccard_similarity_score
+
+def get_feature_vector_opp(element_set, kc_value, opp, w=1.0):
+    result = [0.0] * len(element_set)
+    i=0
+    for val in kc_value:
+        if val in element_set :
+            try:
+                result[element_set.index(val)] = float(opp[i])/200.0
+            except ValueError:
+                result[element_set.index(val)] = 0
+            i=i+1
+    return result
 
 def get_feature_vector(element_set, value_set, w=1.0):
     result = [0.0] * len(element_set)
@@ -80,6 +92,7 @@ def get_feature_vectors_nb(dataset, N, studentId_list, unit_list, section_list,
 
 def get_feature_vectors(dataset, N, studentId_list, unit_list, section_list,
                          problem_name_list, step_name_list, kc_list, kc_list_raw):
+
     rows = []
     for i in range(1,N):
         student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]],10)
@@ -91,11 +104,12 @@ def get_feature_vectors(dataset, N, studentId_list, unit_list, section_list,
         section_feature = get_feature_vector(section_list,[section], 1)
         section_size = len(section_feature)
 
-        #problem_name_feature = get_feature_vector(problem_name_list,[dataset[i][3]])
-        #problem_name_size = len(problem_name_feature)
+        ppname = process_problem_name(dataset[i][3])
+        problem_name_feature = get_feature_vector(problem_name_list,[ppname],1 )
+        problem_name_size = len(problem_name_feature)
 
-        #problem_view_feature = [float(dataset[i][4])/(float(dataset[i][4])+1)]
-        #problem_view_size = len(problem_view_feature)
+        problem_view_feature = [float(dataset[i][4])/(float(dataset[i][4])+1)]
+        problem_view_size = len(problem_view_feature)
 
         p_step = process_step_name(dataset[i][5])
         step_name_feature = [ p_step.count('+'),p_step.count('-'),p_step.count('*'),p_step.count('/'),p_step.count('{var}'),p_step.count('{d}'),p_step.count('(') ]
@@ -104,12 +118,16 @@ def get_feature_vectors(dataset, N, studentId_list, unit_list, section_list,
 
         #print step_name_feature
         kc_feature = get_feature_vector(kc_list, dataset[i][len(dataset[i])-2].split("~~"),1 )
-        kc_feature_size = len(kc_feature)        
+        kc_feature_size = len(kc_feature)  
+
+        opp_feature = get_feature_vector_opp(kc_list, dataset[i][len(dataset[i])-2].split("~~"), dataset[i][len(dataset[i])-1].split("~~"), 1 )
+        opp_size = len(opp_feature)  
+
         #o = dataset[i][len(dataset[i])-1].split("~~")
 
         #print problem_hierarchy_feature
-        rows.append(student_id_feature +  unit_feature + section_feature + step_name_feature + kc_feature)
-    print "feature vector composition: ", studentId_size, unit_size, section_size, step_name_size, kc_feature_size
+        rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+ problem_view_feature + step_name_feature + kc_feature + opp_feature)
+    print "feature vector composition: ", studentId_size, unit_size, section_size, problem_name_size, problem_view_size, step_name_size, kc_feature_size, opp_size
     return rows
 
 def process_data(training_data, testing_data):
@@ -124,7 +142,7 @@ def process_data(training_data, testing_data):
     kc_list_raw = []
     testing_rows = []
 
-    N = 100000#len(training_data)
+    N = 50000#len(training_data)
     print "Num Of Lines to train: ", N
     for i in range(1,N):
         studentId = training_data[i][1]
@@ -134,7 +152,7 @@ def process_data(training_data, testing_data):
 
         kcraw = training_data[i][len(training_data[i])-2]
         kcs = training_data[i][len(training_data[i])-2].split("~~")
-        o = training_data[i][len(training_data[i])-1].split("~~")
+        #opp = training_data[i][len(training_data[i])-1].split("~~")
 
         is_first_correct_list.append(training_data[i][13])
 
@@ -144,8 +162,11 @@ def process_data(training_data, testing_data):
             unit_list.append(unit)
         if section not in section_list:
             section_list.append(section)            
-        if problem_name not in problem_name_list:
-            problem_name_list.append(problem_name)
+
+        ppname = process_problem_name(problem_name)     
+        if ppname not in problem_name_list:
+            problem_name_list.append(ppname)  
+
         if step_name not in step_name_list:
             step_name_list.append(step_name)
         if kcraw not in kc_list_raw:
@@ -154,11 +175,12 @@ def process_data(training_data, testing_data):
             if kc not in kc_list:
                 kc_list.append(kc)
 
+    #print problem_name_list
     print "#of unique item in each categories: ",len(studentId_list), len(unit_list),len(section_list), len(problem_name_list), len(step_name_list), len(kc_list), len(kc_list_raw)
 
     # Create matrix...
-    training_data_rows = get_feature_vectors_nb(training_data, N, studentId_list, unit_list,section_list, problem_name_list, step_name_list, kc_list, kc_list_raw)
-    testing_data_rows = get_feature_vectors_nb(testing_data, len(testing_data), studentId_list,unit_list, section_list, problem_name_list, step_name_list, kc_list, kc_list_raw)
+    training_data_rows = get_feature_vectors(training_data, N, studentId_list, unit_list,section_list, problem_name_list, step_name_list, kc_list, kc_list_raw)
+    testing_data_rows = get_feature_vectors(testing_data, len(testing_data), studentId_list,unit_list, section_list, problem_name_list, step_name_list, kc_list, kc_list_raw)
 
     return training_data_rows, is_first_correct_list, testing_data_rows
 
@@ -195,14 +217,14 @@ def main(arg):
     #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
-    #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=40)
+    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=200, p=2)
 
     #clf = RandomForestClassifier(n_estimators=50,n_jobs=-1, verbose=True)
-    #clf = svm.SVC(verbose=True, cache_size=5000, kernel='linear', C=0.5)
+    #clf = svm.SVC(verbose=True, cache_size=5000, kernel='linear', C=1.0)
     #clf = tree.DecisionTreeClassifier()
 
     #clf = GaussianNB()
-    clf = MultinomialNB(alpha=1.0)
+    #clf = MultinomialNB(alpha=1.0)
     #clf = BernoulliNB(alpha=1.0, binarize=1.0)
 
     clf.fit(rows, is_first_correct_list)
