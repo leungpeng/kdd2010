@@ -53,7 +53,8 @@ python prob.py bridge_to_algebra_2006_2007
 | bridge_to_algebra_2006_2007 | 0.261519231749 | 0.357504131339 |
 
 ## (1) Feature vector based method (OneHotEncoding)
-```
+```sh
+# Feature : student(weight=50), unit, section, processed step_name, kc
 python feature_vector.py algebra_2005_2006
 ```
 | Dataset      | Method  | Training    | Testing  | Size|Training Time|Predict Time
@@ -62,6 +63,16 @@ python feature_vector.py algebra_2005_2006
 | algebra_2005_2006 | KNN(k=10) | 0.332238179089 | 0.517161982612 |50k| 9 sec| 17 sec  |
 | algebra_2005_2006 | KNN(k=20) | 0.324500426044 | 0.46722690752 |200k| 147 sec| 558 sec  |
 | algebra_2005_2006 | RandomForest(n=50) | 0.319 | 0.607 |50k| 5.7 sec| 0.8 sec  |
+
+```sh
+# Feature : student(weight=10), unit, section, process problem name, normalized problem view, processed step_name, kc, normalized opportunity
+python feature_vector.py algebra_2005_2006
+```
+| Dataset      | Method  | Training    | Testing  | Size|Training Time|Predict Time
+| -------------|---------|-------------|----------|-----|------------|------------|  |
+| algebra_2005_2006 | KNN(k=40) | 0.139213460584 | 0.481050023681 |50k| 15 sec| 73 sec  |
+| algebra_2005_2006 | KNN(k=200) | | 0.137313853181 | 0.451867815084 |200k| 175 sec| 1774 sec  |
+
 
 ## (2) Feature vector based method (unique key for each column, distance between vectors are not defined)
 ```
