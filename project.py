@@ -14,7 +14,7 @@ def read_file(file_name):
 def write_file(file_name, result):
     f = open(file_name, 'w')
     for i in result:
-        f.write(str(i)+'\n')
+        f.write(str(i)[1:-1]+'\n')
     return
 
 def load_data(dataset):
@@ -43,6 +43,10 @@ def process_step_name(step_name):
     step_name = re.sub(r'\(-\{d\}', '({d}', step_name)
     step_name = re.sub(r'\(-\{var\}', '({var}', step_name)
     return step_name
+
+def process_problem_name(problem_name):
+    problem_name = re.sub(r'[^ a-zA-Z]', '', problem_name)
+    return problem_name
 
 def show_data(data):
     #print training_data[0]
