@@ -74,6 +74,14 @@ python feature_vector.py algebra_2005_2006
 | algebra_2005_2006 | KNN(k=200) | 0.137313853181 | 0.451867815084 |200k| 175 sec| 1774 sec  |
 
 
+```sh
+# Feature : student(weight=10), unit, section, process problem name, normalized problem view, processed step_name, kc, normalized opportunity, 8 cfars, 3 temporal (<6 mean cfars, <6 mean hints, whether has this <student,KC> pairs)
+python feature_vector.py algebra_2005_2006
+```
+| Dataset      | Method  | Training    | Testing  | Size|Training Time|Predict Time
+| -------------|---------|-------------|----------|-----|------------|------------|  |
+| algebra_2005_2006 | KNN(k=50) | 0.12016775277 | 0.480263350998 |50k| 12 sec| 12 sec  | 124 sec |
+
 ## (2) Feature vector based method (unique key for each column, distance between vectors are not defined)
 ```
 python feature_vector.py algebra_2005_2006
