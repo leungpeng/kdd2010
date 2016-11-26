@@ -38,11 +38,11 @@ def get_feature_vector(element_set, value_set, w=1.0):
     return result
 
 
-def get_feature_vectors_nb(training_data, dataset, N, studentId_list, unit_list, section_list,
+def get_feature_vectors_nb(training_data, maxtrainID, dataset, N, studentId_list, unit_list, section_list,
                          problem_name_list, step_name_list, kc_list, kc_list_raw,
                           student_dict, step_dict, problem_name_dict, kc_dict,
                           problem_step_dict, student_problem_dict, student_unit_dict,
-                           student_kc_dict, student_kc_temporal_dict):
+                           student_kc_dict, student_kc_temporal_dict, day_list):
 
     step_name_dict = []
     for i in range(1,N):
@@ -99,14 +99,18 @@ def get_feature_vectors_nb(training_data, dataset, N, studentId_list, unit_list,
 
 
 
-def get_feature_vectors(training_data, dataset, N, studentId_list, unit_list, section_list,
+def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, unit_list, section_list,
                          problem_name_list, step_name_list, kc_list, kc_list_raw,
                           student_dict, step_dict, problem_name_dict, kc_dict, 
                          problem_step_dict, student_problem_dict, student_unit_dict,
-                          student_kc_dict, student_kc_temporal_dict):
+                          student_kc_dict, student_kc_temporal_dict, day_list):
 
     rows = []
     for i in range(1,N):
+        #skip those rows if not yet trained
+        if int(dataset[i][0]) > maxtrainID+1:
+            continue
+
         student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]],10)
         studentId_size = len(student_id_feature)
 
@@ -174,32 +178,71 @@ def get_feature_vectors(training_data, dataset, N, studentId_list, unit_list, se
             student_unit_cfar = numpy.mean(student_unit_dict.values())
 		
         student_kc = (dataset[i][1], dataset[i][len(dataset[i])-2])
+        student_kc_temporal = [0,0,0] 
+        memory=[0,0,0,0] #[1day, 1week, 1 month, >1 month]
+
         if student_kc_dict.has_key(student_kc):
             student_kc_cfar = student_kc_dict[student_kc]
 
-            # Take the last 6 or if any CFA and hint of this (student, kc) pairs
             itemlist=student_kc_temporal_dict[student_kc]
-            itemlist=itemlist[-6:]
-            cfa_mean=0
-            hint_mean=0
+            # extract the historyitemlist
+            historyitemlist =[]
+            currid = dataset[i][0]
             for rowindex in itemlist:
-                cfa_mean=cfa_mean+ int(training_data[rowindex][13])
-                hint_mean=hint_mean+int(training_data[rowindex][15])
-            cfa_mean = float(cfa_mean)/len(itemlist)
-            hint_mean = float(hint_mean)/len(itemlist)
-            student_kc_temporal=[cfa_mean, hint_mean, 1]
+                rowid = training_data[rowindex][0]
+                if int(rowid) <= int(currid):
+                    historyitemlist.append(rowindex)
+                    currday = day_list[rowindex] #Find the best possible day of today
+                    
+            #Perform the memory check
+            for rowindex in historyitemlist:
+                testday = day_list[rowindex]
+                if testday>currday:
+                    continue
+                elif testday==currday:
+                    memory[0]=1
+                elif testday+7>=currday:
+                    memory[1]=1
+                elif testday+30>=currday:
+                    memory[2]=1
+                else:
+                    memory[3]=1
+
+            # Take the last 6 or if any CFA and hint of this (student, kc) pairs            
+            historyitemlist=historyitemlist[-6:]
+            if len(historyitemlist)>0:
+                cfa_mean=0
+                hint_mean=0
+                for rowindex in historyitemlist:
+                    cfa_mean=cfa_mean+ int(training_data[rowindex][13])
+                    hint_mean=hint_mean+int(training_data[rowindex][15])
+                cfa_mean = float(cfa_mean)/len(historyitemlist)
+                hint_mean = float(hint_mean)/len(historyitemlist)
+                student_kc_temporal=[cfa_mean, hint_mean, 1]
         else:
             student_kc_cfar = numpy.mean(student_kc_dict.values())
-            student_kc_temporal = [0, 0, 0]						
+            					
 
-        #o = dataset[i][len(dataset[i])-1].split("~~")
+        o = dataset[i][len(dataset[i])-1].split("~~")
+        oppsum=0
+        for opp in o:
+            try:
+                oppsum=oppsum+int(opp)
+            except ValueError:
+                oppsum=oppsum
+        oppsum=float(oppsum)/200.0
 
         #print problem_hierarchy_feature
         rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
          problem_view_feature + step_name_feature + kc_feature + opp_feature +
          [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
          [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
-         student_kc_temporal)
+         student_kc_temporal + memory)
+
+        # rows.append(problem_view_feature +
+        #  [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
+        #  [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
+        #  student_kc_temporal + memory + [oppsum])
 
     print "feature vector composition: ", studentId_size, unit_size, section_size, \
         problem_name_size, problem_view_size, step_name_size, kc_feature_size, opp_size
@@ -236,8 +279,9 @@ def process_data(training_data, testing_data):
     student_kc_dict={}
     student_kc_dict_sum={}
     student_kc_temporal={}
+    day_list = [0]
 
-    N = 50000#len(training_data)
+    N = 200000#len(training_data)
     print "Num Of Lines to train: ", N
     for i in range(1,N):
         studentId = training_data[i][1]
@@ -336,7 +380,14 @@ def process_data(training_data, testing_data):
             student_kc_dict[student_kcs]=int(cfa)
             student_kc_dict_sum[student_kcs]=1    
             student_kc_temporal[student_kcs]=[i]  
-            
+
+        if float(training_data[i][10]) >= 0:
+            day_list.append(day_list[-1])
+        else:
+            day_list.append(day_list[-1]+1)
+    
+    #print day_list
+
     #CFAR
     for key in student_dict:
         student_dict[key] = float(student_dict[key])/student_dict_sum[key]
@@ -355,20 +406,23 @@ def process_data(training_data, testing_data):
         student_unit_dict[key] = float(student_unit_dict[key])/student_unit_dict_sum[key]
     for key in student_kc_dict:
         student_kc_dict[key] = float(student_kc_dict[key])/student_kc_dict_sum[key]
-                        
+    
+    maxtrainID = int(training_data[N-1][0])
+
     #print problem_name_list
     print "#of unique item in each categories: ",len(studentId_list), len(unit_list),\
         len(section_list), len(problem_name_list), len(step_name_list), len(kc_list), len(kc_list_raw)
 
     # Create matrix...
-    training_data_rows = get_feature_vectors(training_data, training_data, N, studentId_list, unit_list,
+    training_data_rows = get_feature_vectors(training_data, maxtrainID, training_data, N, studentId_list, unit_list,
         section_list, problem_name_list, step_name_list, kc_list, kc_list_raw, student_dict,
          step_dict, problem_name_dict, kc_dict, problem_step_dict, student_problem_dict, 
-         student_unit_dict, student_kc_dict, student_kc_temporal)
-    testing_data_rows = get_feature_vectors(training_data, testing_data, len(testing_data), studentId_list,
+         student_unit_dict, student_kc_dict, student_kc_temporal, day_list)
+
+    testing_data_rows = get_feature_vectors(training_data, maxtrainID, testing_data, len(testing_data), studentId_list,
         unit_list, section_list, problem_name_list, step_name_list, kc_list, kc_list_raw,
          student_dict, step_dict, problem_name_dict, kc_dict, problem_step_dict,
-          student_problem_dict, student_unit_dict, student_kc_dict, student_kc_temporal)
+          student_problem_dict, student_unit_dict, student_kc_dict, student_kc_temporal, day_list)
 
     return training_data_rows, CFA_list, testing_data_rows
 
@@ -398,16 +452,17 @@ def main(arg):
     process = psutil.Process(os.getpid())
     print "RAM usage (MB):", process.memory_info().rss/1024/1024
 
-    #write_file("preprocessed.txt", rows)
+    write_file("preprocessed_train.txt", rows)
+    write_file("preprocessed_test.txt", testing_rows)
 
     start = time.time()
     #clf = linear_model.SGDClassifier(n_jobs=-1,n_iter=1000)
     #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
-    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=50, p=2)
+    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=100, p=2)
 
-    #clf = RandomForestClassifier(n_estimators=50,n_jobs=-1, verbose=True)
+    #clf = RandomForestClassifier(n_estimators=100,n_jobs=-1, verbose=True)
     #clf = svm.SVC(verbose=True, cache_size=5000, kernel='linear', C=1.0)
     #clf = tree.DecisionTreeClassifier()
 
@@ -426,15 +481,15 @@ def main(arg):
     print "RAM usage (MB):", process.memory_info().rss/1024/1024
 
     start = time.time()
-    predict_result = clf.predict(rows)
+    predict_result = clf.predict(rows[:50000])
     end = time.time()
-    print "Time to do prediction of self-test", end-start, " sec"
+    print "Time to do prediction of 50k self-test", end-start, " sec"
 
     #print "Mean accuracy" , clf.score(rows, CFA_list)
     print "first 50 items of predict: ", predict_result[:100]
     print "first 50 items of GT: ", CFA_list[:100]
     predict_result = [ float(i) for i in predict_result]
-    training_error = rmse(predict_result, [ float(i) for i in CFA_list])
+    training_error = rmse(predict_result, [ float(i) for i in CFA_list[:50000]])
     print "rmse of first 50 items ", rmse([ float(i) for i in predict_result[:50]], [ float(i) for i in CFA_list[:50]])
     print "rmse of first 150 items ", rmse([ float(i) for i in predict_result[:150]], [ float(i) for i in CFA_list[:150]])
     print "rmse of first 500 items ", rmse([ float(i) for i in predict_result[:500]], [ float(i) for i in CFA_list[:500]])
