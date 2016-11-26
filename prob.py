@@ -55,16 +55,16 @@ def get_predict_result_by_kc(student, kc_name, opportunity):
     total_result = 1.0
     if kc_name in student:
         history = [result for count,result in student[kc_name] if count <= opportunity ]
-
         all_result = [result for count,result in student[kc_name]]
-        total_correct, total_incorrect = 1.0 * all_result.count('1'), 1.0 * all_result.count('0')
+
+        total_correct, total_incorrect = float(all_result.count('1')), float(all_result.count('0'))
         total_result = total_correct / (total_correct + total_incorrect)
 
-        correct, incorrect = 1.0*history.count('1'), 1.0*history.count('0')
+        correct, incorrect = float(history.count('1')), float(history.count('0'))
         if (correct + incorrect) > 0:
             result = correct / (correct + incorrect)
-        result = float(total_result) * float(result)
-    return 1.0 * result
+        result = total_result * float(result)
+    return result
 
 def predict(student_result, overall_result, student_kc, testing_data):
     predict_result = []
