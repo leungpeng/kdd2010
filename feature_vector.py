@@ -17,6 +17,7 @@ import os
 import psutil
 from sklearn.metrics import jaccard_similarity_score
 import numpy
+from multiprocessing.pool import ThreadPool
 
 def get_feature_vector_opp(element_set, kc_value, opp, w=1.0):
     result = [0.0] * len(element_set)
@@ -130,7 +131,7 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
         p_step = process_step_name(dataset[i][5])
         step_name_feature = [ p_step.count('+'),p_step.count('-'),p_step.count('*'),
             p_step.count('/'),p_step.count('{var}'),p_step.count('{d}'),p_step.count('(') ]
-        #step_name_feature = [float(x)/sum(step_name_feature) for x in step_name_feature]
+        #step_name_feature = [float(x)*2 for x in step_name_feature]
         step_name_size = len(step_name_feature)  
 
         #print step_name_feature
@@ -281,7 +282,7 @@ def process_data(training_data, testing_data):
     student_kc_temporal={}
     day_list = [0]
 
-    N = 200000#len(training_data)
+    N = 50000#len(training_data)
     print "Num Of Lines to train: ", N
     for i in range(1,N):
         studentId = training_data[i][1]
@@ -413,6 +414,22 @@ def process_data(training_data, testing_data):
     print "#of unique item in each categories: ",len(studentId_list), len(unit_list),\
         len(section_list), len(problem_name_list), len(step_name_list), len(kc_list), len(kc_list_raw)
 
+    # do it in multi-thread
+    # NumOfCore=4
+    # partsize = N/NumOfCore
+    # thread_list = []
+    # training_data_rows= []
+    # trainpartresult = [0, 0, 0, 0]
+    # pool = ThreadPool(processes=NumOfCore)
+    # for i in range(0, NumOfCore):
+    #     trainpartresult[i] = pool.apply_async(get_feature_vectors, (training_data, maxtrainID, training_data[i*partsize:(i+1)*partsize], partsize, studentId_list, unit_list,\
+    #     section_list, problem_name_list, step_name_list, kc_list, kc_list_raw, student_dict,\
+    #      step_dict, problem_name_dict, kc_dict, problem_step_dict, student_problem_dict, \
+    #      student_unit_dict, student_kc_dict, student_kc_temporal, day_list))
+
+    # for i in range(0, NumOfCore):
+    #     training_data_rows.append(trainpartresult[i].get())
+
     # Create matrix...
     training_data_rows = get_feature_vectors(training_data, maxtrainID, training_data, N, studentId_list, unit_list,
         section_list, problem_name_list, step_name_list, kc_list, kc_list_raw, student_dict,
@@ -452,15 +469,15 @@ def main(arg):
     process = psutil.Process(os.getpid())
     print "RAM usage (MB):", process.memory_info().rss/1024/1024
 
-    write_file("preprocessed_train.txt", rows)
-    write_file("preprocessed_test.txt", testing_rows)
+    #write_file("preprocessed_train.txt", rows)
+    #write_file("preprocessed_test.txt", testing_rows)
 
     start = time.time()
     #clf = linear_model.SGDClassifier(n_jobs=-1,n_iter=1000)
     #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
-    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=100, p=2)
+    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=2000, p=2)
 
     #clf = RandomForestClassifier(n_estimators=100,n_jobs=-1, verbose=True)
     #clf = svm.SVC(verbose=True, cache_size=5000, kernel='linear', C=1.0)
@@ -481,9 +498,9 @@ def main(arg):
     print "RAM usage (MB):", process.memory_info().rss/1024/1024
 
     start = time.time()
-    predict_result = clf.predict(rows[:50000])
+    predict_result = clf.predict(rows[:1500])
     end = time.time()
-    print "Time to do prediction of 50k self-test", end-start, " sec"
+    print "Time to do prediction of 1.5k self-test", end-start, " sec"
 
     #print "Mean accuracy" , clf.score(rows, CFA_list)
     print "first 50 items of predict: ", predict_result[:100]
@@ -494,11 +511,14 @@ def main(arg):
     print "rmse of first 150 items ", rmse([ float(i) for i in predict_result[:150]], [ float(i) for i in CFA_list[:150]])
     print "rmse of first 500 items ", rmse([ float(i) for i in predict_result[:500]], [ float(i) for i in CFA_list[:500]])
     print "rmse of first 1500 items ", rmse([ float(i) for i in predict_result[:1500]], [ float(i) for i in CFA_list[:1500]])
-    print "rmse of first 5000 items ", rmse([ float(i) for i in predict_result[:5000]], [ float(i) for i in CFA_list[:5000]])
-    print "rmse of first 15000 items ", rmse([ float(i) for i in predict_result[:15000]], [ float(i) for i in CFA_list[:15000]])
-    print "rmse of first 45000 items ", rmse([ float(i) for i in predict_result[:45000]], [ float(i) for i in CFA_list[:45000]])
+    #print "rmse of first 5000 items ", rmse([ float(i) for i in predict_result[:5000]], [ float(i) for i in CFA_list[:5000]])
+    #print "rmse of first 15000 items ", rmse([ float(i) for i in predict_result[:15000]], [ float(i) for i in CFA_list[:15000]])
+    #print "rmse of first 45000 items ", rmse([ float(i) for i in predict_result[:45000]], [ float(i) for i in CFA_list[:45000]])
 
+    start = time.time()
     predict_result = clf.predict(testing_rows)
+    end = time.time()
+    print "Time to do prediction of testing rows", end-start, " sec"    
     predict_result = [ float(i) for i in predict_result]
     predict_error =  rmse(predict_result, [float(i[13]) for i in testing_result_data[1:]])
 
