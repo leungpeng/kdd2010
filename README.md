@@ -52,6 +52,19 @@ python prob.py bridge_to_algebra_2006_2007
 | algebra_2006_2007 | 0.200404828212 | 0.39463380799 |
 | bridge_to_algebra_2006_2007 | 0.172471892949 | 0.355436539753 |
 
+## Collaborative Filtering
+```sh
+# Feature : student, problem_hierarchy, problem_name, step_name
+python cf.py algebra_2005_2006
+python cf.py algebra_2006_2007
+python cf.py bridge_to_algebra_2006_2007
+```
+| Dataset      | Training    | Testing  |
+| -------------|-------------|----------|
+| algebra_2005_2006 | 0.415726052285 | 0.405040698634 |
+| algebra_2006_2007 | 0.411450169266 | 0.4043896756 |
+| bridge_to_algebra_2006_2007 | 0.311035090946 | 0.365743405094 |
+
 ## (1) Feature vector based method (OneHotEncoding)
 ```sh
 # Feature : student(weight=50), unit, section, processed step_name, kc
