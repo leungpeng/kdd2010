@@ -95,6 +95,7 @@ python feature_vector.py algebra_2005_2006
 | Dataset      | Method  | self test(first50k row)    | Testing(rows ID<max trained rows) | Size|Training Time|Predict Time
 | -------------|---------|-------------|----------|-----|------------|------------|  |
 | algebra_2005_2006 | KNN(k=10) | 0.0835463942968 | 0.489339023162 |200k| 268 sec| 854 sec |
+| algebra_2005_2006 | KNN(k=1000) | 0.0516397779494 | 0.43467239637 |100k| 19 sec| 40 sec |
 
 ## (2) Feature vector based method (unique key for each column, distance between vectors are not defined)
 ```
