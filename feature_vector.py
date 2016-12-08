@@ -4,7 +4,7 @@ import sys
 import random
 import gc
 import time
-from project import write_file, load_data, show_data, rmse, process_step_name, process_problem_name
+from project import write_file, load_data, show_data, rmse, process_step_name, process_problem_name, plotroc
 from sklearn import svm
 from sklearn import linear_model
 from sklearn.neighbors import KNeighborsClassifier
@@ -18,6 +18,10 @@ import psutil
 from sklearn.metrics import jaccard_similarity_score
 import numpy
 from multiprocessing.pool import ThreadPool
+from difflib import SequenceMatcher
+
+def stringsimilartest(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 def get_feature_vector_opp(element_set, kc_value, opp, w=1.0):
     result = [0.0] * len(element_set)
@@ -112,7 +116,7 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
         if int(dataset[i][0]) > maxtrainID+1:
             continue
 
-        student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]],10)
+        student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]],5)
         studentId_size = len(student_id_feature)
 
         unit, section = dataset[i][2].split(", ")
@@ -234,11 +238,14 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
         oppsum=float(oppsum)/200.0
 
         #print problem_hierarchy_feature
+        # rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
+        #  problem_view_feature + step_name_feature + kc_feature + opp_feature +
+        #  [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
+        #  [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
+        #  student_kc_temporal + memory)
+
         rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
-         problem_view_feature + step_name_feature + kc_feature + opp_feature +
-         [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
-         [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
-         student_kc_temporal + memory)
+         problem_view_feature + step_name_feature + kc_feature + opp_feature)
 
         # rows.append(problem_view_feature +
         #  [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
@@ -250,7 +257,7 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
 
     return rows
 
-def process_data(training_data, testing_data):
+def process_data(training_data, testing_data, testing_result_data):
     #show_data(training_data)
     studentId_list = []
     section_list = []
@@ -282,7 +289,7 @@ def process_data(training_data, testing_data):
     student_kc_temporal={}
     day_list = [0]
 
-    N = 50000#len(training_data)
+    N = 10000#len(training_data)
     print "Num Of Lines to train: ", N
     for i in range(1,N):
         studentId = training_data[i][1]
@@ -382,7 +389,7 @@ def process_data(training_data, testing_data):
             student_kc_dict_sum[student_kcs]=1    
             student_kc_temporal[student_kcs]=[i]  
 
-        if float(training_data[i][10]) >= 0:
+        if 1: #float(training_data[i][10]) >= 0:
             day_list.append(day_list[-1])
         else:
             day_list.append(day_list[-1]+1)
@@ -441,7 +448,13 @@ def process_data(training_data, testing_data):
          student_dict, step_dict, problem_name_dict, kc_dict, problem_step_dict,
           student_problem_dict, student_unit_dict, student_kc_dict, student_kc_temporal, day_list)
 
-    return training_data_rows, CFA_list, testing_data_rows
+    test_CFA = []
+    for i in range(1,len(testing_result_data)):
+        #skip those rows if not yet trained
+        if int(testing_result_data[i][0]) <= maxtrainID+1:
+            test_CFA.append(testing_result_data[i][13])
+
+    return training_data_rows, CFA_list, testing_data_rows, test_CFA
 
 def myknndist(x, y):
     return np.sum((x-y)**2)
@@ -454,7 +467,7 @@ def main(arg):
     print "Time to load data", end-start, " sec"
 
     start = time.time()
-    rows, CFA_list, testing_rows = process_data(training_data, testing_data)
+    rows, CFA_list, testing_rows, test_CFA = process_data(training_data, testing_data, testing_result_data)
     end = time.time()
     print "Time to process data", end-start , " sec"   
     print len(rows),len(CFA_list),len(testing_rows),len(rows[0])
@@ -477,15 +490,15 @@ def main(arg):
     #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
-    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=2000, p=2)
+    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=1000, p=2)
 
     #clf = RandomForestClassifier(n_estimators=100,n_jobs=-1, verbose=True)
-    #clf = svm.SVC(verbose=True, cache_size=5000, kernel='linear', C=1.0)
+    #clf = svm.SVC(verbose=True, cache_size=5000, C=1.0)
     #clf = tree.DecisionTreeClassifier()
 
     #clf = GaussianNB()
     #clf = MultinomialNB(alpha=1.0)
-    #clf = BernoulliNB(alpha=1.0, binarize=1.0)
+    #clf = BernoulliNB(alpha=2.0, binarize=1.0)
 
     clf.fit(rows, CFA_list)
     print clf
@@ -504,9 +517,9 @@ def main(arg):
 
     #print "Mean accuracy" , clf.score(rows, CFA_list)
     print "first 50 items of predict: ", predict_result[:100]
-    print "first 50 items of GT: ", CFA_list[:100]
+    print "first 50 items of GT: ", numpy.asarray(CFA_list[:100])
     predict_result = [ float(i) for i in predict_result]
-    training_error = rmse(predict_result, [ float(i) for i in CFA_list[:50000]])
+    training_error = rmse(predict_result, [ float(i) for i in CFA_list[:1500]])
     print "rmse of first 50 items ", rmse([ float(i) for i in predict_result[:50]], [ float(i) for i in CFA_list[:50]])
     print "rmse of first 150 items ", rmse([ float(i) for i in predict_result[:150]], [ float(i) for i in CFA_list[:150]])
     print "rmse of first 500 items ", rmse([ float(i) for i in predict_result[:500]], [ float(i) for i in CFA_list[:500]])
@@ -516,13 +529,18 @@ def main(arg):
     #print "rmse of first 45000 items ", rmse([ float(i) for i in predict_result[:45000]], [ float(i) for i in CFA_list[:45000]])
 
     start = time.time()
-    predict_result = clf.predict(testing_rows)
+    predict_test_result = clf.predict(testing_rows)
     end = time.time()
     print "Time to do prediction of testing rows", end-start, " sec"    
-    predict_result = [ float(i) for i in predict_result]
-    predict_error =  rmse(predict_result, [float(i[13]) for i in testing_result_data[1:]])
 
+    print "first 50 items of test predict: ",predict_test_result[:50]
+    print "first 50 items of test GT: ", numpy.asarray(test_CFA[:50])
+
+    predict_test_result = [ float(i) for i in predict_test_result]
+    predict_error =  rmse(predict_test_result, [ float(i) for i in test_CFA])
     print '|', dataset, '|', training_error, '|', predict_error ,'|'
+
+    plotroc(CFA_list[:1500], predict_result, test_CFA, predict_test_result)
     return
 
 if __name__ == "__main__":
