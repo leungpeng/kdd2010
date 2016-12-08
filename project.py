@@ -20,9 +20,9 @@ def plotroc(train_gt, train_predict, test_gt, test_predict):
     plt.figure()
     lw = 2
     plt.plot(fpr, tpr, color='deeppink',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+             lw=lw, label='Self test ROC curve (area = %0.2f)' % roc_auc)
     plt.plot(fpr2, tpr2, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc2)
+             lw=lw, label='Test ROC curve (area = %0.2f)' % roc_auc2)
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
