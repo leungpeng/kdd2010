@@ -6,6 +6,31 @@ import operator
 import math
 import random
 import re
+from sklearn.metrics import roc_curve, auc
+import matplotlib.pyplot as plt
+
+def plotroc(train_gt, train_predict, test_gt, test_predict):
+    fpr, tpr, thresholds = roc_curve([int(i) for i in train_gt],
+     [ int(i) for i in train_predict])
+    roc_auc = auc(fpr, tpr)
+    fpr2, tpr2, thresholds = roc_curve([int(i) for i in test_gt],
+     [ int(i) for i in test_predict])
+    roc_auc2 = auc(fpr2, tpr2)
+
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='deeppink',
+             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot(fpr2, tpr2, color='darkorange',
+             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc2)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic curve')
+    plt.legend(loc="lower right")
+    plt.show()
 
 def read_file(file_name):
     f = open(file_name, 'rb')
