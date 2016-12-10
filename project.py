@@ -6,6 +6,7 @@ import operator
 import math
 import random
 import re
+import numpy as np
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 
@@ -90,3 +91,70 @@ def rmse(predict_result, expected_result):
     n = len(predict_result)
     mse = sum([(predict - expected)**2 for predict, expected in zip(predict_result, expected_result)]) / n
     return mse ** 0.5
+
+
+'''
+Latent Factor Matrix Factorization
+'''
+def get_avg_rankings(ranking):
+    avg_ranking = { i: float(sum(r))/float(len(r)) for i, r in ranking.items() }
+    overall_ranking = sum([ ar for i,ar in avg_ranking.items()]) / len(avg_ranking)
+    return avg_ranking, overall_ranking
+
+def create_matrix(training_data, user_rankings, item_rankings):
+    users, items = [ i for i in user_rankings.keys()], [ i for i in item_rankings.keys()]
+    avg_user_rankings , overall_user_ranking = get_avg_rankings(user_rankings)
+    avg_item_rankings , overall_item_ranking = get_avg_rankings(item_rankings)
+    matrix = []
+    print "create_matrix :", len(users), len(items)
+    for i in users:
+        matrix.append([0.0] * len(items))
+    for user, item, ranking in training_data:
+        user_bias = avg_user_rankings[user] - overall_user_ranking if user in avg_user_rankings else 0.0
+        item_bias = avg_item_rankings[item] - overall_item_ranking if item in avg_item_rankings else 0.0
+        predict_value = overall_item_ranking + user_bias + item_bias
+        matrix[users.index(user)][items.index(item)] = float(predict_value)
+    return matrix
+
+def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.001, regular=0.02, steps=200):
+    users, items = [ i for i in user_rankings.keys()], [ i for i in item_rankings.keys()]
+    U, s, V = np.linalg.svd(matrix, full_matrices=False)
+    Q, P = U, np.transpose(np.dot(np.diag(s), V))
+    print "Start Latent Factor...", Q.shape, P.shape
+    #Q, P = np.random.rand(Q.shape[0],Q.shape[1]), np.random.rand(P.shape[0],P.shape[1])
+    for t in range(1, steps):
+        for user, item, ranking in training_data:
+            #current_matrix = np.dot(Q, np.transpose(P))
+            user_idx, item_idx = users.index(user), items.index(item)
+            q_i, p_x = Q[user_idx], P[item_idx]
+            r_x_i = matrix[user_idx][item_idx]
+            q_i_p_x = np.dot(q_i, p_x)
+            error = 2 * (r_x_i - q_i_p_x)
+
+            error_p_x, error_q_i = np.multiply(error, p_x), np.multiply(error, q_i)
+            learn_p_x, learn_q_i = np.multiply(regular, p_x), np.multiply(regular, q_i)
+
+            # q_i = q_i + learn_1 * ( error * p_x - learn_2 * q_i )
+            Q[user_idx] = np.add(q_i,np.multiply(learn, np.subtract(error_p_x,learn_q_i)))
+            # p_x = p_x + learn_2 * ( error * q_i - learn_1 * p_x )
+            P[item_idx] = np.add(p_x,np.multiply(learn, np.subtract(error_q_i,learn_p_x)))
+
+        new_matrix = np.dot(Q, np.transpose(P))
+        predict_result = predict_from_matrix(new_matrix, user_rankings, item_rankings,[ data[:2] for data in training_data])
+        print t, rmse(predict_result,[ data[2] for data in training_data])
+    return new_matrix
+
+def predict_from_matrix(matrix, user_rankings, item_rankings, data):
+    result = []
+    users, items = [ i for i in user_rankings.keys()], [ i for i in item_rankings.keys()]
+    avg_user_rankings, overall_user_ranking = get_avg_rankings(user_rankings)
+    avg_item_rankings, overall_item_ranking = get_avg_rankings(item_rankings)
+    for target_user, target_item in data:
+        if target_user in users and target_item in items:
+            predict_value = matrix[users.index(target_user)][items.index(target_item)]
+        else:
+            user_bias = avg_user_rankings[target_user] - overall_user_ranking if target_user in avg_user_rankings else 0.0
+            item_bias = avg_item_rankings[target_item] - overall_item_ranking if target_item in avg_item_rankings else 0.0
+            predict_value = overall_item_ranking + user_bias + item_bias
+        result.append(predict_value)
+    return result
