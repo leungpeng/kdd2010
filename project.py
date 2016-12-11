@@ -9,6 +9,55 @@ import re
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
+from itertools import cycle
+
+def Classifier_Eval(y_true, y_pred, IsSelfTest=True):
+    if IsSelfTest==True:
+        print '\n|||Self test Result|||'
+    else:
+        print '\n|||Test case Result|||'
+
+    truearray = [int(i) for i in y_true]
+    predarray = [int(i) for i in y_pred]
+    print 'rmse: ', rmse(predarray, truearray)
+    print 'R2 coeff: ', r2_score(truearray, predarray)
+    fpr, tpr, thresholds = roc_curve(truearray, predarray)
+    print 'roc area: ', auc(fpr, tpr)    
+    print classification_report(truearray, predarray)
+
+
+def plotrocmany(y_true, y_pred_list, name_list, N):
+    plt.figure()
+    lw = 2
+    fpr=dict()
+    tpr=dict()
+    thrd=dict()
+    roc_auc=dict()
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+
+    for i, color in zip(range(N), colors):  
+        j=int(i)
+        fpr[j], tpr[j], thrd[j] = roc_curve([int(k) for k in y_true],\
+         [ int(k) for k in y_pred_list[j]])
+        roc_auc[j] = auc(fpr[j], tpr[j])
+
+        plt.plot(fpr[j], tpr[j], color=color,
+                 lw=lw, label='%s ROC curve (area = %0.2f)' % (name_list[j], roc_auc[j]))
+
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic curve')
+    plt.legend(loc="lower right")
+    plt.show()    
+
+
 
 def plotroc(train_gt, train_predict, test_gt, test_predict):
     fpr, tpr, thresholds = roc_curve([int(i) for i in train_gt],
@@ -87,10 +136,12 @@ def show_data(data):
         print "------------------------------------"
     return
 
-def rmse(predict_result, expected_result):
-    n = len(predict_result)
-    mse = sum([(predict - expected)**2 for predict, expected in zip(predict_result, expected_result)]) / n
-    return mse ** 0.5
+def rmse(y_pred, y_true):
+    #n = len(y_pred)
+    #mse = sum([(predict - expected)**2 for predict, expected in zip(y_pred, y_true)]) / n
+    truearray = [int(i) for i in y_true]
+    predarray = [int(i) for i in y_pred]
+    return np.sqrt(mean_squared_error(truearray, predarray))
 
 
 '''
