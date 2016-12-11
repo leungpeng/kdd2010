@@ -31,6 +31,7 @@ python all_in_one.py bridge_to_algebra_2006_2007
 |Collabrative filtering(Rate=0.01, step=50, reg=0.02) | 0.889 |
 
 ROC curve:
+![alt tag](https://raw.githubusercontent.com/leungpeng/cmsc5724_project/master/roc_bridge_to0607_50kline.png?token=AQjFyk5AuyJfWcbGlnQU0AIDTSCmTtSeks5YVpnLwA%3D%3D)
 
 
 ## Random method
