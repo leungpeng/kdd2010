@@ -20,7 +20,7 @@ def Classifier_Eval(y_true, y_pred, IsSelfTest=True):
     print 'rmse: ', rmse(predarray, truearray)
     print 'R2 coeff: ', r2_score(truearray, predarray)
     fpr, tpr, thresholds = roc_curve(truearray, predarray)
-    print 'roc area: ', auc(fpr, tpr)    
+    print 'roc area: ', auc(fpr, tpr)
     print classification_report(truearray, predarray)
 
 
@@ -34,7 +34,7 @@ def plotrocmany(y_true, y_pred_list, name_list):
     colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
     N=len(name_list)
 
-    for i, color in zip(range(N), colors):  
+    for i, color in zip(range(N), colors):
         j=int(i)
         fpr[j], tpr[j], thrd[j] = roc_curve([int(k) for k in y_true],\
          [ int(k) for k in y_pred_list[j]])
@@ -50,7 +50,7 @@ def plotrocmany(y_true, y_pred_list, name_list):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic curve')
     plt.legend(loc="lower right")
-    plt.show()    
+    plt.show()
 
 
 
@@ -203,4 +203,5 @@ def predict_from_matrix(matrix, user_rankings, item_rankings, data):
             item_bias = avg_item_rankings[target_item] - overall_item_ranking if target_item in avg_item_rankings else 0.0
             predict_value = overall_item_ranking + user_bias + item_bias
         result.append(predict_value)
+    #print "First 10 result = ",result[:10]
     return result
