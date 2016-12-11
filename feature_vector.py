@@ -1,23 +1,13 @@
 #!/usr/bin/env python
 # Usage: python project.py algebra_2005_2006
-import sys
-import random
-import gc
-import time
+import sys, random, gc, time, os, psutil, numpy
 from project import write_file, load_data, show_data, rmse, process_step_name,\
  process_problem_name, plotroc, Classifier_Eval
-from sklearn import svm
-from sklearn import linear_model
+from sklearn import svm, linear_model, tree
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
-from sklearn import tree
-import os
-import psutil
 from sklearn.metrics import jaccard_similarity_score
-import numpy
 from multiprocessing.pool import ThreadPool
 from difflib import SequenceMatcher
 
@@ -105,7 +95,7 @@ def get_feature_vectors_nb(training_data, maxtrainID, dataset, N, studentId_list
 
 
 
-def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, unit_list, section_list,
+def get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrainID, dataset, N, studentId_list, unit_list, section_list,
                          problem_name_list, step_name_list, kc_list, kc_list_raw,
                           student_dict, step_dict, problem_name_dict, kc_dict, 
                          problem_step_dict, student_problem_dict, student_unit_dict,
@@ -114,7 +104,7 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
     rows = []
     for i in range(1,N):
         #skip those rows if not yet trained
-        if int(dataset[i][0]) > maxtrainID+1:
+        if SkipRowNotYetTrain==True and int(dataset[i][0]) > maxtrainID+1:
             continue
 
         student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]],5)
@@ -147,96 +137,97 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
          dataset[i][len(dataset[i])-1].split("~~"), 1 )
         opp_size = len(opp_feature)  
         
-        #CFAR       
-        if student_dict.has_key(dataset[i][1]):
-            student_cfar = student_dict[dataset[i][1]]
-        else:
-            student_cfar = numpy.mean(student_dict.values())
+        if CondenseVec == True:
+            #CFAR       
+            if student_dict.has_key(dataset[i][1]):
+                student_cfar = student_dict[dataset[i][1]]
+            else:
+                student_cfar = numpy.mean(student_dict.values())
 
-        if step_dict.has_key(p_step):
-            step_cfar = step_dict[p_step]
-        else:
-            step_cfar = numpy.mean(step_dict.values())
-						
-        if problem_name_dict.has_key(dataset[i][3]):
-            problem_name_cfar = problem_name_dict[dataset[i][3]]
-        else:
-            problem_name_cfar = numpy.mean(problem_name_dict.values())
-        
-        if kc_dict.has_key(dataset[i][len(dataset[i])-2]):
-            kc_cfar = kc_dict[dataset[i][len(dataset[i])-2]]
-        else:
-            kc_cfar = numpy.mean(kc_dict.values())
-						
-        if problem_step_dict.has_key((dataset[i][3], p_step)):
-            problem_step_cfar = problem_step_dict[(dataset[i][3], p_step)]
-        else:
-			problem_step_cfar = numpy.mean(problem_step_dict.values())
-			
-        if student_problem_dict.has_key((dataset[i][1], dataset[i][3])):
-            student_problem_cfar = student_problem_dict[(dataset[i][1], dataset[i][3])]
-        else:
-			student_problem_cfar = numpy.mean(student_problem_dict.values())
-			
-        if student_unit_dict.has_key((dataset[i][1], unit)):
-            student_unit_cfar = student_unit_dict[(dataset[i][1], unit)]
-        else:
-            student_unit_cfar = numpy.mean(student_unit_dict.values())
-		
-        student_kc = (dataset[i][1], dataset[i][len(dataset[i])-2])
-        student_kc_temporal = [0,0,0] 
-        memory=[0,0,0,0] #[1day, 1week, 1 month, >1 month]
+            if step_dict.has_key(p_step):
+                step_cfar = step_dict[p_step]
+            else:
+                step_cfar = numpy.mean(step_dict.values())
+    						
+            if problem_name_dict.has_key(dataset[i][3]):
+                problem_name_cfar = problem_name_dict[dataset[i][3]]
+            else:
+                problem_name_cfar = numpy.mean(problem_name_dict.values())
+            
+            if kc_dict.has_key(dataset[i][len(dataset[i])-2]):
+                kc_cfar = kc_dict[dataset[i][len(dataset[i])-2]]
+            else:
+                kc_cfar = numpy.mean(kc_dict.values())
+    						
+            if problem_step_dict.has_key((dataset[i][3], p_step)):
+                problem_step_cfar = problem_step_dict[(dataset[i][3], p_step)]
+            else:
+    			problem_step_cfar = numpy.mean(problem_step_dict.values())
+    			
+            if student_problem_dict.has_key((dataset[i][1], dataset[i][3])):
+                student_problem_cfar = student_problem_dict[(dataset[i][1], dataset[i][3])]
+            else:
+    			student_problem_cfar = numpy.mean(student_problem_dict.values())
+    			
+            if student_unit_dict.has_key((dataset[i][1], unit)):
+                student_unit_cfar = student_unit_dict[(dataset[i][1], unit)]
+            else:
+                student_unit_cfar = numpy.mean(student_unit_dict.values())
+    		
+            student_kc = (dataset[i][1], dataset[i][len(dataset[i])-2])
+            student_kc_temporal = [0,0,0] 
+            memory=[0,0,0,0] #[1day, 1week, 1 month, >1 month]
 
-        if student_kc_dict.has_key(student_kc):
-            student_kc_cfar = student_kc_dict[student_kc]
+            if student_kc_dict.has_key(student_kc):
+                student_kc_cfar = student_kc_dict[student_kc]
 
-            itemlist=student_kc_temporal_dict[student_kc]
-            # extract the historyitemlist
-            historyitemlist =[]
-            currid = dataset[i][0]
-            for rowindex in itemlist:
-                rowid = training_data[rowindex][0]
-                if int(rowid) <= int(currid):
-                    historyitemlist.append(rowindex)
-                    currday = day_list[rowindex] #Find the best possible day of today
-                    
-            #Perform the memory check
-            for rowindex in historyitemlist:
-                testday = day_list[rowindex]
-                if testday>currday:
-                    continue
-                elif testday==currday:
-                    memory[0]=1
-                elif testday+7>=currday:
-                    memory[1]=1
-                elif testday+30>=currday:
-                    memory[2]=1
-                else:
-                    memory[3]=1
-
-            # Take the last 6 or if any CFA and hint of this (student, kc) pairs            
-            historyitemlist=historyitemlist[-6:]
-            if len(historyitemlist)>0:
-                cfa_mean=0
-                hint_mean=0
+                itemlist=student_kc_temporal_dict[student_kc]
+                # extract the historyitemlist
+                historyitemlist =[]
+                currid = dataset[i][0]
+                for rowindex in itemlist:
+                    rowid = training_data[rowindex][0]
+                    if int(rowid) <= int(currid):
+                        historyitemlist.append(rowindex)
+                        currday = day_list[rowindex] #Find the best possible day of today
+                        
+                #Perform the memory check
                 for rowindex in historyitemlist:
-                    cfa_mean=cfa_mean+ int(training_data[rowindex][13])
-                    hint_mean=hint_mean+int(training_data[rowindex][15])
-                cfa_mean = float(cfa_mean)/len(historyitemlist)
-                hint_mean = float(hint_mean)/len(historyitemlist)
-                student_kc_temporal=[cfa_mean, hint_mean, 1]
-        else:
-            student_kc_cfar = numpy.mean(student_kc_dict.values())
-            					
+                    testday = day_list[rowindex]
+                    if testday>currday:
+                        continue
+                    elif testday==currday:
+                        memory[0]=1
+                    elif testday+7>=currday:
+                        memory[1]=1
+                    elif testday+30>=currday:
+                        memory[2]=1
+                    else:
+                        memory[3]=1
 
-        o = dataset[i][len(dataset[i])-1].split("~~")
-        oppsum=0
-        for opp in o:
-            try:
-                oppsum=oppsum+int(opp)
-            except ValueError:
-                oppsum=oppsum
-        oppsum=float(oppsum)/200.0
+                # Take the last 6 or if any CFA and hint of this (student, kc) pairs            
+                historyitemlist=historyitemlist[-6:]
+                if len(historyitemlist)>0:
+                    cfa_mean=0
+                    hint_mean=0
+                    for rowindex in historyitemlist:
+                        cfa_mean=cfa_mean+ int(training_data[rowindex][13])
+                        hint_mean=hint_mean+int(training_data[rowindex][15])
+                    cfa_mean = float(cfa_mean)/len(historyitemlist)
+                    hint_mean = float(hint_mean)/len(historyitemlist)
+                    student_kc_temporal=[cfa_mean, hint_mean, 1]
+            else:
+                student_kc_cfar = numpy.mean(student_kc_dict.values())
+                					
+
+            o = dataset[i][len(dataset[i])-1].split("~~")
+            oppsum=0
+            for opp in o:
+                try:
+                    oppsum=oppsum+int(opp)
+                except ValueError:
+                    oppsum=oppsum
+            oppsum=float(oppsum)/200.0
 
         #print problem_hierarchy_feature
         # rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
@@ -253,12 +244,15 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
         #  [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
         #  student_kc_temporal + memory + [oppsum])
 
-    print "feature vector composition: ", studentId_size, unit_size, section_size, \
-        problem_name_size, problem_view_size, step_name_size, kc_feature_size, opp_size
+    print "feature vector composition: ", 'student', studentId_size, 'unit', unit_size,\
+     'section', section_size, 'problem', problem_name_size, 'view', problem_view_size,\
+      'step', step_name_size, 'kc', kc_feature_size, 'opportunity', opp_size
 
     return rows
 
-def process_data(training_data, testing_data, testing_result_data, N):
+def process_data(training_data, testing_data, testing_result_data, N,\
+ SkipRowNotYetTrain, CondenseVec):
+
     #show_data(training_data)
     studentId_list = []
     section_list = []
@@ -325,96 +319,96 @@ def process_data(training_data, testing_data, testing_result_data, N):
             if kc not in kc_list:
                 kc_list.append(kc)
 
-        #CFAR
-        problem_step = (problem_name, step_name)
-        student_problem = (studentId, problem_name)
-        student_unit = (studentId, unit)
-        student_kcs = (studentId, training_data[i][len(training_data[i])-2])   
+        if CondenseVec==True:
+            #CFAR
+            problem_step = (problem_name, step_name)
+            student_problem = (studentId, problem_name)
+            student_unit = (studentId, unit)
+            student_kcs = (studentId, training_data[i][len(training_data[i])-2])   
 
-        if student_dict.has_key(studentId):
-            student_dict[studentId]=student_dict[studentId]+int(cfa)
-            student_dict_sum[studentId]=student_dict_sum[studentId]+1
-        else:
-            student_dict[studentId]=int(cfa)
-            student_dict_sum[studentId]=1
+            if student_dict.has_key(studentId):
+                student_dict[studentId]=student_dict[studentId]+int(cfa)
+                student_dict_sum[studentId]=student_dict_sum[studentId]+1
+            else:
+                student_dict[studentId]=int(cfa)
+                student_dict_sum[studentId]=1
 
-        if step_dict.has_key(step_name):
-            step_dict[step_name]=step_dict[step_name]+int(cfa)
-            step_dict_sum[step_name]=step_dict_sum[step_name]+1
-        else:
-            step_dict[step_name]=int(cfa)
-            step_dict_sum[step_name]=1
+            if step_dict.has_key(step_name):
+                step_dict[step_name]=step_dict[step_name]+int(cfa)
+                step_dict_sum[step_name]=step_dict_sum[step_name]+1
+            else:
+                step_dict[step_name]=int(cfa)
+                step_dict_sum[step_name]=1
 
-        if problem_name_dict.has_key(problem_name):
-            problem_name_dict[problem_name]=problem_name_dict[problem_name]+int(cfa)
-            problem_name_dict_sum[problem_name]=problem_name_dict_sum[problem_name]+1
-        else:
-            problem_name_dict[problem_name]=int(cfa)
-            problem_name_dict_sum[problem_name]=1
+            if problem_name_dict.has_key(problem_name):
+                problem_name_dict[problem_name]=problem_name_dict[problem_name]+int(cfa)
+                problem_name_dict_sum[problem_name]=problem_name_dict_sum[problem_name]+1
+            else:
+                problem_name_dict[problem_name]=int(cfa)
+                problem_name_dict_sum[problem_name]=1
 
-        if kc_dict.has_key(kcraw):
-            kc_dict[kcraw]=kc_dict[kcraw]+int(cfa)
-            kc_dict_sum[kcraw]=kc_dict_sum[kcraw]+1
-        else:
-            kc_dict[kcraw]=int(cfa)
-            kc_dict_sum[kcraw]=1
+            if kc_dict.has_key(kcraw):
+                kc_dict[kcraw]=kc_dict[kcraw]+int(cfa)
+                kc_dict_sum[kcraw]=kc_dict_sum[kcraw]+1
+            else:
+                kc_dict[kcraw]=int(cfa)
+                kc_dict_sum[kcraw]=1
 
-        if problem_step_dict.has_key(problem_step):
-            problem_step_dict[problem_step]=problem_step_dict[problem_step]+int(cfa)
-            problem_step_dict_sum[problem_step]=problem_step_dict_sum[problem_step]+1
-        else:
-            problem_step_dict[problem_step]=int(cfa)
-            problem_step_dict_sum[problem_step]=1
+            if problem_step_dict.has_key(problem_step):
+                problem_step_dict[problem_step]=problem_step_dict[problem_step]+int(cfa)
+                problem_step_dict_sum[problem_step]=problem_step_dict_sum[problem_step]+1
+            else:
+                problem_step_dict[problem_step]=int(cfa)
+                problem_step_dict_sum[problem_step]=1
 
 
-        if student_problem_dict.has_key(student_problem):
-            student_problem_dict[student_problem]=student_problem_dict[student_problem]+int(cfa)
-            student_problem_dict_sum[student_problem]=student_problem_dict_sum[student_problem]+1
-        else:
-            student_problem_dict[student_problem]=int(cfa)
-            student_problem_dict_sum[student_problem]=1
- 
-        if student_unit_dict.has_key(student_unit):
-            student_unit_dict[student_unit]=student_unit_dict[student_unit]+int(cfa)
-            student_unit_dict_sum[student_unit]=student_unit_dict_sum[student_unit]+1
-        else:
-            student_unit_dict[student_unit]=int(cfa)
-            student_unit_dict_sum[student_unit]=1 
+            if student_problem_dict.has_key(student_problem):
+                student_problem_dict[student_problem]=student_problem_dict[student_problem]+int(cfa)
+                student_problem_dict_sum[student_problem]=student_problem_dict_sum[student_problem]+1
+            else:
+                student_problem_dict[student_problem]=int(cfa)
+                student_problem_dict_sum[student_problem]=1
+     
+            if student_unit_dict.has_key(student_unit):
+                student_unit_dict[student_unit]=student_unit_dict[student_unit]+int(cfa)
+                student_unit_dict_sum[student_unit]=student_unit_dict_sum[student_unit]+1
+            else:
+                student_unit_dict[student_unit]=int(cfa)
+                student_unit_dict_sum[student_unit]=1 
 
-        if student_kc_dict.has_key(student_kcs):
-            student_kc_dict[student_kcs]=student_kc_dict[student_kcs]+int(cfa)
-            student_kc_dict_sum[student_kcs]=student_kc_dict_sum[student_kcs]+1
-            student_kc_temporal[student_kcs].append(i)
-        else:
-            student_kc_dict[student_kcs]=int(cfa)
-            student_kc_dict_sum[student_kcs]=1    
-            student_kc_temporal[student_kcs]=[i]  
+            if student_kc_dict.has_key(student_kcs):
+                student_kc_dict[student_kcs]=student_kc_dict[student_kcs]+int(cfa)
+                student_kc_dict_sum[student_kcs]=student_kc_dict_sum[student_kcs]+1
+                student_kc_temporal[student_kcs].append(i)
+            else:
+                student_kc_dict[student_kcs]=int(cfa)
+                student_kc_dict_sum[student_kcs]=1    
+                student_kc_temporal[student_kcs]=[i]  
 
-        if 1: #float(training_data[i][10]) >= 0:
-            day_list.append(day_list[-1])
-        else:
-            day_list.append(day_list[-1]+1)
+            if 1: #float(training_data[i][10]) >= 0:
+                day_list.append(day_list[-1])
+            else:
+                day_list.append(day_list[-1]+1)
     
-    #print day_list
-
-    #CFAR
-    for key in student_dict:
-        student_dict[key] = float(student_dict[key])/student_dict_sum[key]
-    for key in step_dict:
-        step_dict[key] = float(step_dict[key])/step_dict_sum[key]
-    for key in problem_name_dict:
-        problem_name_dict[key] = float(problem_name_dict[key])/problem_name_dict_sum[key]
-    for key in kc_dict:
-        kc_dict[key] = float(kc_dict[key])/kc_dict_sum[key]
-                                
-    for key in problem_step_dict:
-        problem_step_dict[key] = float(problem_step_dict[key])/problem_step_dict_sum[key]
-    for key in student_problem_dict:
-        student_problem_dict[key] = float(student_problem_dict[key])/student_problem_dict_sum[key]
-    for key in student_unit_dict:
-        student_unit_dict[key] = float(student_unit_dict[key])/student_unit_dict_sum[key]
-    for key in student_kc_dict:
-        student_kc_dict[key] = float(student_kc_dict[key])/student_kc_dict_sum[key]
+    if CondenseVec == True:
+        #CFAR
+        for key in student_dict:
+            student_dict[key] = float(student_dict[key])/student_dict_sum[key]
+        for key in step_dict:
+            step_dict[key] = float(step_dict[key])/step_dict_sum[key]
+        for key in problem_name_dict:
+            problem_name_dict[key] = float(problem_name_dict[key])/problem_name_dict_sum[key]
+        for key in kc_dict:
+            kc_dict[key] = float(kc_dict[key])/kc_dict_sum[key]
+                                    
+        for key in problem_step_dict:
+            problem_step_dict[key] = float(problem_step_dict[key])/problem_step_dict_sum[key]
+        for key in student_problem_dict:
+            student_problem_dict[key] = float(student_problem_dict[key])/student_problem_dict_sum[key]
+        for key in student_unit_dict:
+            student_unit_dict[key] = float(student_unit_dict[key])/student_unit_dict_sum[key]
+        for key in student_kc_dict:
+            student_kc_dict[key] = float(student_kc_dict[key])/student_kc_dict_sum[key]
     
     maxtrainID = int(training_data[N-1][0])
 
@@ -439,12 +433,12 @@ def process_data(training_data, testing_data, testing_result_data, N):
     #     training_data_rows.append(trainpartresult[i].get())
 
     # Create matrix...
-    training_data_rows = get_feature_vectors(training_data, maxtrainID, training_data, N, studentId_list, unit_list,
+    training_data_rows = get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrainID, training_data, N, studentId_list, unit_list,
         section_list, problem_name_list, step_name_list, kc_list, kc_list_raw, student_dict,
          step_dict, problem_name_dict, kc_dict, problem_step_dict, student_problem_dict, 
          student_unit_dict, student_kc_dict, student_kc_temporal, day_list)
 
-    testing_data_rows = get_feature_vectors(training_data, maxtrainID, testing_data, len(testing_data), studentId_list,
+    testing_data_rows = get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrainID, testing_data, len(testing_data), studentId_list,
         unit_list, section_list, problem_name_list, step_name_list, kc_list, kc_list_raw,
          student_dict, step_dict, problem_name_dict, kc_dict, problem_step_dict,
           student_problem_dict, student_unit_dict, student_kc_dict, student_kc_temporal, day_list)
@@ -452,7 +446,7 @@ def process_data(training_data, testing_data, testing_result_data, N):
     test_CFA = []
     for i in range(1,len(testing_result_data)):
         #skip those rows if not yet trained
-        if int(testing_result_data[i][0]) <= maxtrainID+1:
+        if int(testing_result_data[i][0]) <= maxtrainID+1 or SkipRowNotYetTrain==False:
             test_CFA.append(testing_result_data[i][13])
 
     return training_data_rows, CFA_list, testing_data_rows, test_CFA
@@ -469,7 +463,7 @@ def main(arg):
 
     start = time.time()
     rows, CFA_list, testing_rows, test_CFA = process_data(training_data,\
-     testing_data, testing_result_data, 10000)
+     testing_data, testing_result_data, 10000, True, False)
     end = time.time()
     print "Time to process data", end-start , " sec"   
     print len(rows),len(CFA_list),len(testing_rows),len(rows[0])
