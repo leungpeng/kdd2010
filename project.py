@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 # Usage: python project.py algebra_2005_2006
-import sys
-import os.path
-import operator
-import math
-import random
-import re
-import numpy as np
+import sys, os.path, operator, math, random, re, numpy as np
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
@@ -30,7 +24,7 @@ def Classifier_Eval(y_true, y_pred, IsSelfTest=True):
     print classification_report(truearray, predarray)
 
 
-def plotrocmany(y_true, y_pred_list, name_list, N):
+def plotrocmany(y_true, y_pred_list, name_list):
     plt.figure()
     lw = 2
     fpr=dict()
@@ -38,6 +32,7 @@ def plotrocmany(y_true, y_pred_list, name_list, N):
     thrd=dict()
     roc_auc=dict()
     colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    N=len(name_list)
 
     for i, color in zip(range(N), colors):  
         j=int(i)
@@ -48,7 +43,7 @@ def plotrocmany(y_true, y_pred_list, name_list, N):
         plt.plot(fpr[j], tpr[j], color=color,
                  lw=lw, label='%s ROC curve (area = %0.2f)' % (name_list[j], roc_auc[j]))
 
-    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--', label='Random Baseline')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
@@ -73,7 +68,7 @@ def plotroc(train_gt, train_predict, test_gt, test_predict):
              lw=lw, label='Self test ROC curve (area = %0.2f)' % roc_auc)
     plt.plot(fpr2, tpr2, color='darkorange',
              lw=lw, label='Test ROC curve (area = %0.2f)' % roc_auc2)
-    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--', label='Random Baseline')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
@@ -167,7 +162,7 @@ def create_matrix(training_data, user_rankings, item_rankings):
         matrix[users.index(user)][items.index(item)] = float(predict_value)
     return matrix
 
-def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.001, regular=0.02, steps=200):
+def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.01, regular=0.02, steps=50):
     users, items = [ i for i in user_rankings.keys()], [ i for i in item_rankings.keys()]
     U, s, V = np.linalg.svd(matrix, full_matrices=False)
     Q, P = U, np.transpose(np.dot(np.diag(s), V))
@@ -192,7 +187,7 @@ def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.0
 
         new_matrix = np.dot(Q, np.transpose(P))
         predict_result = predict_from_matrix(new_matrix, user_rankings, item_rankings,[ data[:2] for data in training_data])
-        print t, rmse(predict_result,[ data[2] for data in training_data])
+        print 'rmse of this epoch', t, rmse(predict_result,[ data[2] for data in training_data])
     return new_matrix
 
 def predict_from_matrix(matrix, user_rankings, item_rankings, data):
