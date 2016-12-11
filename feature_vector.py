@@ -4,7 +4,8 @@ import sys
 import random
 import gc
 import time
-from project import write_file, load_data, show_data, rmse, process_step_name, process_problem_name, plotroc
+from project import write_file, load_data, show_data, rmse, process_step_name,\
+ process_problem_name, plotroc, Classifier_Eval
 from sklearn import svm
 from sklearn import linear_model
 from sklearn.neighbors import KNeighborsClassifier
@@ -257,7 +258,7 @@ def get_feature_vectors(training_data, maxtrainID, dataset, N, studentId_list, u
 
     return rows
 
-def process_data(training_data, testing_data, testing_result_data):
+def process_data(training_data, testing_data, testing_result_data, N):
     #show_data(training_data)
     studentId_list = []
     section_list = []
@@ -282,14 +283,14 @@ def process_data(training_data, testing_data, testing_result_data):
     problem_step_dict_sum={}
     student_problem_dict={}
     student_problem_dict_sum={}
-    student_unit_dict={}
+    student_unit_dict={}    
     student_unit_dict_sum={}
     student_kc_dict={}
     student_kc_dict_sum={}
     student_kc_temporal={}
     day_list = [0]
 
-    N = 10000#len(training_data)
+    #N = 10000#len(training_data)
     print "Num Of Lines to train: ", N
     for i in range(1,N):
         studentId = training_data[i][1]
@@ -467,7 +468,8 @@ def main(arg):
     print "Time to load data", end-start, " sec"
 
     start = time.time()
-    rows, CFA_list, testing_rows, test_CFA = process_data(training_data, testing_data, testing_result_data)
+    rows, CFA_list, testing_rows, test_CFA = process_data(training_data,\
+     testing_data, testing_result_data, 10000)
     end = time.time()
     print "Time to process data", end-start , " sec"   
     print len(rows),len(CFA_list),len(testing_rows),len(rows[0])
@@ -475,10 +477,8 @@ def main(arg):
     #print rows[:200]
     #print testing_rows[:200]
 
-    del training_data
-    del testing_data
+    del training_data, testing_data
     gc.collect()
-
     process = psutil.Process(os.getpid())
     print "RAM usage (MB):", process.memory_info().rss/1024/1024
 
@@ -486,11 +486,14 @@ def main(arg):
     #write_file("preprocessed_test.txt", testing_rows)
 
     start = time.time()
+
+    ##############################################################
+
     #clf = linear_model.SGDClassifier(n_jobs=-1,n_iter=1000)
     #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
-    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=1000, p=2)
+    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, p=2)
 
     #clf = RandomForestClassifier(n_estimators=100,n_jobs=-1, verbose=True)
     #clf = svm.SVC(verbose=True, cache_size=5000, C=1.0)
@@ -499,6 +502,8 @@ def main(arg):
     #clf = GaussianNB()
     #clf = MultinomialNB(alpha=1.0)
     #clf = BernoulliNB(alpha=2.0, binarize=1.0)
+
+    #############################################################
 
     clf.fit(rows, CFA_list)
     print clf
@@ -516,10 +521,13 @@ def main(arg):
     print "Time to do prediction of 1.5k self-test", end-start, " sec"
 
     #print "Mean accuracy" , clf.score(rows, CFA_list)
-    print "first 50 items of predict: ", predict_result[:100]
-    print "first 50 items of GT: ", numpy.asarray(CFA_list[:100])
+    print "first 50 items of predict: ", [int(i) for i in predict_result[:50]]
+    print "first 50 items of GT: ", [int(i) for i in CFA_list[:50]]
     predict_result = [ float(i) for i in predict_result]
-    training_error = rmse(predict_result, [ float(i) for i in CFA_list[:1500]])
+    #training_error = rmse(predict_result, [ float(i) for i in CFA_list[:1500]])
+    Classifier_Eval(CFA_list[:1500], predict_result, True)
+
+
     print "rmse of first 50 items ", rmse([ float(i) for i in predict_result[:50]], [ float(i) for i in CFA_list[:50]])
     print "rmse of first 150 items ", rmse([ float(i) for i in predict_result[:150]], [ float(i) for i in CFA_list[:150]])
     print "rmse of first 500 items ", rmse([ float(i) for i in predict_result[:500]], [ float(i) for i in CFA_list[:500]])
@@ -533,12 +541,13 @@ def main(arg):
     end = time.time()
     print "Time to do prediction of testing rows", end-start, " sec"    
 
-    print "first 50 items of test predict: ",predict_test_result[:50]
-    print "first 50 items of test GT: ", numpy.asarray(test_CFA[:50])
+    print "first 50 items of test predict: ",[int(i) for i in predict_test_result[:50]]
+    print "first 50 items of test GT: ", [int(i) for i in test_CFA[:50]]
 
     predict_test_result = [ float(i) for i in predict_test_result]
-    predict_error =  rmse(predict_test_result, [ float(i) for i in test_CFA])
-    print '|', dataset, '|', training_error, '|', predict_error ,'|'
+    Classifier_Eval(test_CFA, predict_test_result, False)
+    #predict_error =  rmse(predict_test_result, [ float(i) for i in test_CFA])
+    #print '|', dataset, '|', training_error, '|', predict_error ,'|'
 
     plotroc(CFA_list[:1500], predict_result, test_CFA, predict_test_result)
     return
