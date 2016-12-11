@@ -18,14 +18,14 @@ bridge_to_algebra_2006_2007.txt		bridge_to_algebra_2006_2007_master.txt	bridge_t
 # Result
 
 ## All-in-one comparison
+
 ```sh
 python all_in_one.py algebra_2005_2006
 python all_in_one.py algebra_2006_2007
 python all_in_one.py bridge_to_algebra_2006_2007
 ```
-bridge_to_algebra_2006_2007, NumberOfLineToTrain=50k
-| Method    | Test rmse    |
-| -------------|-------------|
+| bridge_to_algebra_2006_2007, NumberOfLineToTrain=50k    | Test rmse   |
+| ----------|-------------|
 | KNN(k=5) | 0.4408|
 | RandomForest(tree=50) | 0.558|
 |Collabrative filtering(Rate=0.01, step=50, reg=0.02) | 0.889 |
