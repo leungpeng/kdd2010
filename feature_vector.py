@@ -95,7 +95,7 @@ def get_feature_vectors_nb(training_data, maxtrainID, dataset, N, studentId_list
 
 
 
-def get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrainID, dataset, N, studentId_list, unit_list, section_list,
+def get_feature_vectors(training_data, IsCondenseVecMode, IsSkipRowNotYetTrain, maxtrainID, dataset, N, studentId_list, unit_list, section_list,
                          problem_name_list, step_name_list, kc_list, kc_list_raw,
                           student_dict, step_dict, problem_name_dict, kc_dict, 
                          problem_step_dict, student_problem_dict, student_unit_dict,
@@ -104,7 +104,7 @@ def get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrain
     rows = []
     for i in range(1,N):
         #skip those rows if not yet trained
-        if SkipRowNotYetTrain==True and int(dataset[i][0]) > maxtrainID+1:
+        if IsSkipRowNotYetTrain==True and int(dataset[i][0]) > maxtrainID+1:
             continue
 
         student_id_feature = get_feature_vector(studentId_list,[dataset[i][1]],5)
@@ -137,7 +137,7 @@ def get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrain
          dataset[i][len(dataset[i])-1].split("~~"), 1 )
         opp_size = len(opp_feature)  
         
-        if CondenseVec == True:
+        if IsCondenseVecMode > 0:
             #CFAR       
             if student_dict.has_key(dataset[i][1]):
                 student_cfar = student_dict[dataset[i][1]]
@@ -230,19 +230,23 @@ def get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrain
             oppsum=float(oppsum)/200.0
 
         #print problem_hierarchy_feature
-        # rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
-        #  problem_view_feature + step_name_feature + kc_feature + opp_feature +
-        #  [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
-        #  [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
-        #  student_kc_temporal + memory)
 
-        rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
-         problem_view_feature + step_name_feature + kc_feature + opp_feature)
+        if IsCondenseVecMode == 0:
+            rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
+             problem_view_feature + step_name_feature + kc_feature + opp_feature)  
+        
+        elif IsCondenseVecMode == 1:         
+            rows.append(student_id_feature + unit_feature + section_feature + problem_name_feature+
+             problem_view_feature + step_name_feature + kc_feature + opp_feature +
+             [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
+             [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
+             student_kc_temporal + memory)
 
-        # rows.append(problem_view_feature +
-        #  [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
-        #  [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
-        #  student_kc_temporal + memory + [oppsum])
+        else:
+            rows.append(problem_view_feature +
+             [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
+             [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
+             student_kc_temporal + memory + [oppsum])
 
     print "feature vector composition: ", 'student', studentId_size, 'unit', unit_size,\
      'section', section_size, 'problem', problem_name_size, 'view', problem_view_size,\
@@ -251,7 +255,7 @@ def get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrain
     return rows
 
 def process_data(training_data, testing_data, testing_result_data, N,\
- SkipRowNotYetTrain, CondenseVec):
+ IsSkipRowNotYetTrain, IsCondenseVecMode):
 
     #show_data(training_data)
     studentId_list = []
@@ -319,7 +323,7 @@ def process_data(training_data, testing_data, testing_result_data, N,\
             if kc not in kc_list:
                 kc_list.append(kc)
 
-        if CondenseVec==True:
+        if IsCondenseVecMode==True:
             #CFAR
             problem_step = (problem_name, step_name)
             student_problem = (studentId, problem_name)
@@ -390,7 +394,7 @@ def process_data(training_data, testing_data, testing_result_data, N,\
             else:
                 day_list.append(day_list[-1]+1)
     
-    if CondenseVec == True:
+    if IsCondenseVecMode > 0:
         #CFAR
         for key in student_dict:
             student_dict[key] = float(student_dict[key])/student_dict_sum[key]
@@ -433,12 +437,12 @@ def process_data(training_data, testing_data, testing_result_data, N,\
     #     training_data_rows.append(trainpartresult[i].get())
 
     # Create matrix...
-    training_data_rows = get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrainID, training_data, N, studentId_list, unit_list,
+    training_data_rows = get_feature_vectors(training_data, IsCondenseVecMode, IsSkipRowNotYetTrain, maxtrainID, training_data, N, studentId_list, unit_list,
         section_list, problem_name_list, step_name_list, kc_list, kc_list_raw, student_dict,
          step_dict, problem_name_dict, kc_dict, problem_step_dict, student_problem_dict, 
          student_unit_dict, student_kc_dict, student_kc_temporal, day_list)
 
-    testing_data_rows = get_feature_vectors(training_data, CondenseVec, SkipRowNotYetTrain, maxtrainID, testing_data, len(testing_data), studentId_list,
+    testing_data_rows = get_feature_vectors(training_data, IsCondenseVecMode, IsSkipRowNotYetTrain, maxtrainID, testing_data, len(testing_data), studentId_list,
         unit_list, section_list, problem_name_list, step_name_list, kc_list, kc_list_raw,
          student_dict, step_dict, problem_name_dict, kc_dict, problem_step_dict,
           student_problem_dict, student_unit_dict, student_kc_dict, student_kc_temporal, day_list)
@@ -446,7 +450,7 @@ def process_data(training_data, testing_data, testing_result_data, N,\
     test_CFA = []
     for i in range(1,len(testing_result_data)):
         #skip those rows if not yet trained
-        if int(testing_result_data[i][0]) <= maxtrainID+1 or SkipRowNotYetTrain==False:
+        if int(testing_result_data[i][0]) <= maxtrainID+1 or IsSkipRowNotYetTrain==False:
             test_CFA.append(testing_result_data[i][13])
 
     return training_data_rows, CFA_list, testing_data_rows, test_CFA
@@ -463,7 +467,7 @@ def main(arg):
 
     start = time.time()
     rows, CFA_list, testing_rows, test_CFA = process_data(training_data,\
-     testing_data, testing_result_data, 10000, True, False)
+     testing_data, testing_result_data, 50000, True, 0)
     end = time.time()
     print "Time to process data", end-start , " sec"   
     print len(rows),len(CFA_list),len(testing_rows),len(rows[0])
