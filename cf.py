@@ -1,6 +1,6 @@
-import sys
-import random
-from project import load_data, show_data, rmse, create_matrix, latent_factor, predict_from_matrix, process_problem_name
+import sys, random
+from project import load_data, show_data, rmse, create_matrix, latent_factor,\
+ predict_from_matrix, process_problem_name, plotroc
 
 def data_key(data):
     student = data[1].upper()
@@ -22,6 +22,7 @@ def training(data):
     problems = {}
     testing_sample = []
     N = 300000#len(data)
+
     for i in range(1,N):
         student, hierarchy, problem_name, step_name = data_key(data[i])
         is_first_correct = float(data[i][13])
@@ -29,8 +30,10 @@ def training(data):
         students.setdefault(student, []).append(is_first_correct)
         problems.setdefault(item_key, []).append(is_first_correct)
         testing_sample.append((student, item_key, is_first_correct))
+
     matrix = create_matrix(testing_sample, students, problems)
     matrix = latent_factor(testing_sample, matrix, students, problems)
+
     print "Training Done..."
     return matrix, students, problems, testing_sample
 
@@ -42,10 +45,12 @@ def main(arg):
     predict_result = predict_from_matrix(matrix, students, problems,[ (data[0].upper(), data[1].upper()) for data in testing_sample])
     training_error = rmse(predict_result, [float(i[2]) for i in testing_sample])
 
-    predict_result = predict_from_matrix(matrix, students, problems,[ (data[1].upper(), process_problem_name(data[3].upper()+data[5].upper())) for data in testing_data])
-    predict_error = rmse(predict_result, [float(i[13]) for i in testing_result_data[1:]])
+    predict_test_result = predict_from_matrix(matrix, students, problems,[ (data[1].upper(), process_problem_name(data[3].upper()+data[5].upper())) for data in testing_data[1:]])
+    predict_error = rmse(predict_test_result, [float(i[13]) for i in testing_result_data[1:]])
 
     print '|', dataset, '|', training_error, '|', predict_error ,'|'
+    plotroc([float(i[2]) for i in testing_sample], predict_result,\
+     [float(i[13]) for i in testing_result_data[1:]], predict_test_result)
     return
 
 if __name__ == "__main__":
