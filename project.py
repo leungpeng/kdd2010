@@ -15,12 +15,12 @@ def Classifier_Eval(y_true, y_pred, IsSelfTest=True):
     else:
         print '\n|||Test case Result|||'
 
-    truearray = [int(i) for i in y_true]
-    predarray = [int(i) for i in y_pred]
+    truearray = [int(round(float(i))) for i in y_true]
+    predarray = [int(round(float(i))) for i in y_pred]
     print 'rmse: ', rmse(predarray, truearray)
     print 'R2 coeff: ', r2_score(truearray, predarray)
     fpr, tpr, thresholds = roc_curve(truearray, predarray)
-    print 'roc area: ', auc(fpr, tpr)
+    print 'roc area: ', auc(fpr, tpr)    
     print classification_report(truearray, predarray)
 
 
@@ -31,17 +31,17 @@ def plotrocmany(y_true, y_pred_list, name_list):
     tpr=dict()
     thrd=dict()
     roc_auc=dict()
-    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'red','green','blue', 'Yellow'])
     N=len(name_list)
 
-    for i, color in zip(range(N), colors):
+    for i, color in zip(range(N), colors):  
         j=int(i)
         fpr[j], tpr[j], thrd[j] = roc_curve([int(k) for k in y_true],\
          [ int(k) for k in y_pred_list[j]])
         roc_auc[j] = auc(fpr[j], tpr[j])
 
         plt.plot(fpr[j], tpr[j], color=color,
-                 lw=lw, label='%s ROC curve (area = %0.2f)' % (name_list[j], roc_auc[j]))
+                 lw=lw, label='%s (area = %0.2f)' % (name_list[j], roc_auc[j]))
 
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--', label='Random Baseline')
     plt.xlim([0.0, 1.0])
@@ -50,7 +50,7 @@ def plotrocmany(y_true, y_pred_list, name_list):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic curve')
     plt.legend(loc="lower right")
-    plt.show()
+    plt.show()    
 
 
 
@@ -134,8 +134,8 @@ def show_data(data):
 def rmse(y_pred, y_true):
     #n = len(y_pred)
     #mse = sum([(predict - expected)**2 for predict, expected in zip(y_pred, y_true)]) / n
-    truearray = [int(i) for i in y_true]
-    predarray = [int(i) for i in y_pred]
+    truearray = [int(round(float(i))) for i in y_true]
+    predarray = [int(round(float(i))) for i in y_pred]
     return np.sqrt(mean_squared_error(truearray, predarray))
 
 
@@ -153,19 +153,25 @@ def create_matrix(training_data, user_rankings, item_rankings):
     avg_item_rankings , overall_item_ranking = get_avg_rankings(item_rankings)
     matrix = []
     print "create_matrix :", len(users), len(items)
+
     for i in users:
         matrix.append([0.0] * len(items))
+
     for user, item, ranking in training_data:
         user_bias = avg_user_rankings[user] - overall_user_ranking if user in avg_user_rankings else 0.0
         item_bias = avg_item_rankings[item] - overall_item_ranking if item in avg_item_rankings else 0.0
         predict_value = overall_item_ranking + user_bias + item_bias
         matrix[users.index(user)][items.index(item)] = float(predict_value)
+
     return matrix
 
-def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.01, regular=0.02, steps=50):
+def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.001,\
+ regular=0.02, steps=50):
+    #write_file("cf_matrix.txt", matrix)
     users, items = [ i for i in user_rankings.keys()], [ i for i in item_rankings.keys()]
     U, s, V = np.linalg.svd(matrix, full_matrices=False)
     Q, P = U, np.transpose(np.dot(np.diag(s), V))
+
     print "Start Latent Factor...", Q.shape, P.shape
     #Q, P = np.random.rand(Q.shape[0],Q.shape[1]), np.random.rand(P.shape[0],P.shape[1])
     for t in range(1, steps):
@@ -176,6 +182,7 @@ def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.0
             r_x_i = matrix[user_idx][item_idx]
             q_i_p_x = np.dot(q_i, p_x)
             error = 2 * (r_x_i - q_i_p_x)
+            #print 'hahaha', r_x_i, q_i_p_x, error
 
             error_p_x, error_q_i = np.multiply(error, p_x), np.multiply(error, q_i)
             learn_p_x, learn_q_i = np.multiply(regular, p_x), np.multiply(regular, q_i)
@@ -186,8 +193,13 @@ def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.0
             P[item_idx] = np.add(p_x,np.multiply(learn, np.subtract(error_q_i,learn_p_x)))
 
         new_matrix = np.dot(Q, np.transpose(P))
-        predict_result = predict_from_matrix(new_matrix, user_rankings, item_rankings,[ data[:2] for data in training_data])
-        print 'rmse of this epoch', t, rmse(predict_result,[ data[2] for data in training_data])
+
+        if t%10 ==0:
+            predict_result = predict_from_matrix(new_matrix, user_rankings, item_rankings,[ data[:2] for data in training_data])
+            #print predict_result
+            print 'rmse of this epoch', t, rmse(predict_result,[ data[2] for data in training_data])
+
+    #write_file("cf_recovered_matrix.txt", new_matrix)
     return new_matrix
 
 def predict_from_matrix(matrix, user_rankings, item_rankings, data):
@@ -203,5 +215,4 @@ def predict_from_matrix(matrix, user_rankings, item_rankings, data):
             item_bias = avg_item_rankings[target_item] - overall_item_ranking if target_item in avg_item_rankings else 0.0
             predict_value = overall_item_ranking + user_bias + item_bias
         result.append(predict_value)
-    #print "First 10 result = ",result[:10]
     return result
