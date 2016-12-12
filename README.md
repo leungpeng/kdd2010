@@ -33,7 +33,7 @@ python all_in_one.py bridge_to_algebra_2006_2007
 |Collabrative filtering(Rate=0.001, step=50, reg=0.02) | 0.3982 |
 
 ROC curve:
-![alt tag](https://raw.githubusercontent.com/leungpeng/cmsc5724_project/master/roc_bridge_to0607_50kline.png?token=AQjFyk5AuyJfWcbGlnQU0AIDTSCmTtSeks5YVpnLwA%3D%3D)
+![alt tag](https://raw.githubusercontent.com/leungpeng/cmsc5724_project/master/roc_bridge_to_0607_100kline.png?token=AQjFyqlXh219YLOj_cTbkU-_Tr9T9lONks5YWAR2wA%3D%3D)
 
 | bridge_to_algebra_2006_2007, NumberOfLineToTrain=50k, feature_vec=normal    | Test rmse   |
 | ----------|-------------|
