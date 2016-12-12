@@ -14,32 +14,34 @@ def main(arg):
     NumOfLineToTrain = 50000
     training_data, testing_data, testing_result_data = load_data(dataset)
 
+    # mode0: normal, 1: normal+condensed, 2: only condensed
+    Feature_vector_mode = 0
     rows, CFA_list, testing_rows, test_CFA = process_data(training_data,\
-     testing_data, testing_result_data, NumOfLineToTrain, False, False)
+     testing_data, testing_result_data, NumOfLineToTrain, False, Feature_vector_mode)
     print len(rows),len(CFA_list),len(testing_rows),len(rows[0])
 
 
     clf=[]
     y_pred_list=[]
-    name_list=['KNN', 'RandomForest','Collabrative filtering']
+    name_list=['KNN', 'RandomForest', 'LinearSVM', 'NaiveBayes', \
+    'Collabrative filtering']
     #y_pred_list.append([random.randint(0,1) for i in testing_rows])
 
     ##############################################################
-    M=2 # number of classifier
-
-    #clf = linear_model.SGDClassifier(n_jobs=-1,n_iter=1000)
-    #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
+    M=4 # number of classifier
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
     clf.append(KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, p=2))
     clf.append(RandomForestClassifier(n_estimators=50,n_jobs=-1, verbose=False))
-
-    #clf = svm.SVC(verbose=True, cache_size=5000, C=1.0)
+    clf.append(svm.LinearSVC(verbose=False, C=1.0))
     #clf = tree.DecisionTreeClassifier()
 
-    #clf = GaussianNB()
+    clf.append(GaussianNB())
     #clf = MultinomialNB(alpha=1.0)
-    #clf = BernoulliNB(alpha=2.0, binarize=1.0)
+    #clf.append(BernoulliNB(alpha=2.0, binarize=1.0))
+
+    #clf.append(linear_model.SGDClassifier(n_jobs=-1,n_iter=1000))
+    #clf.append(linear_model.LogisticRegressionCV(n_jobs=-1, verbose=False))
 
     #############################################################
 
@@ -57,9 +59,9 @@ def main(arg):
 
     for i in range(len(name_list)):
         print name_list[i], ' rmse= ', rmse(y_pred_list[i], test_CFA)
-        print "first 20 items of prediction: ",[int(i) for i in y_pred_list[i][:20]]
+        print "first 30 items of prediction: ",[int(round(float(i))) for i in y_pred_list[i][:30]]
 
-    print "first 20 items of test GT: ", [int(i) for i in test_CFA[:20]]
+    print "first 30 items of test GT: ", [int(i) for i in test_CFA[:30]]
     print 'Please close the ROC curve plot'
     plotrocmany(test_CFA, y_pred_list, name_list)
     return
