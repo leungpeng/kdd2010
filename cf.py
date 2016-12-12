@@ -48,6 +48,8 @@ def main(arg):
     predict_test_result = predict_from_matrix(matrix, students, problems,[ (data[1].upper(), process_problem_name(data[3].upper()+data[5].upper())) for data in testing_data[1:]])
     predict_error = rmse(predict_test_result, [float(i[13]) for i in testing_result_data[1:]])
 
+    print "first 30 items of prediction: ",[int(round(float(i))) for i in predict_test_result[:30]]
+    print "first 30 items of test GT: ", [int(i[13]) for i in testing_result_data[1:31]]
     print '|', dataset, '|', training_error, '|', predict_error ,'|'
     plotroc([float(i[2]) for i in testing_sample], predict_result,\
      [float(i[13]) for i in testing_result_data[1:]], predict_test_result)
