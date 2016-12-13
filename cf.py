@@ -17,11 +17,11 @@ def get_avg_rankings(ranking):
 def get_bias_with_key(avg_data, key):
     return avg_data[0][key] - avg_data[1] if key in avg_data[0] else 0.0
 
-def training(data):
+def training(data, learnrate, regular, numofstep):
     students = {}
     problems = {}
     testing_sample = []
-    N = 300000#len(data)
+    N = len(data)
 
     for i in range(1,N):
         student, hierarchy, problem_name, step_name = data_key(data[i])
@@ -32,7 +32,7 @@ def training(data):
         testing_sample.append((student, item_key, is_first_correct))
 
     matrix = create_matrix(testing_sample, students, problems)
-    matrix = latent_factor(testing_sample, matrix, students, problems)
+    matrix = latent_factor(testing_sample, matrix, students, problems, learnrate, regular, numofstep)
 
     print "Training Done..."
     return matrix, students, problems, testing_sample
@@ -41,7 +41,10 @@ def main(arg):
     dataset = arg[1] #'algebra_2005_2006'
     training_data, testing_data, testing_result_data = load_data(dataset)
 
-    matrix, students, problems, testing_sample = training(training_data)
+    learnrate = 0.01
+    regular = 0.02
+    numofstep = 100
+    matrix, students, problems, testing_sample = training(training_data, learnrate, regular, numofstep)
     predict_result = predict_from_matrix(matrix, students, problems,[ (data[0].upper(), data[1].upper()) for data in testing_sample])
     training_error = rmse(predict_result, [float(i[2]) for i in testing_sample])
 
@@ -49,7 +52,7 @@ def main(arg):
     predict_error = rmse(predict_test_result, [float(i[13]) for i in testing_result_data[1:]])
 
     print "first 30 items of prediction: ",[int(round(float(i))) for i in predict_test_result[:30]]
-    print "first 30 items of test GT: ", [int(i[13]) for i in testing_result_data[1:31]]
+    print "first 30 items of test GT: ", [int(i[13]) for i in testing_result_data[1:30]]
     print '|', dataset, '|', training_error, '|', predict_error ,'|'
     plotroc([float(i[2]) for i in testing_sample], predict_result,\
      [float(i[13]) for i in testing_result_data[1:]], predict_test_result)
