@@ -21,7 +21,7 @@ def Classifier_Eval(y_true, y_pred, IsSelfTest=True):
     print 'R2 coeff: ', r2_score(truearray, predarray)
     fpr, tpr, thresholds = roc_curve(truearray, predarray)
     print 'roc area: ', auc(fpr, tpr)    
-    print classification_report(truearray, predarray)
+    #print classification_report(truearray, predarray)
 
 
 def plotrocmany(y_true, y_pred_list, name_list):
@@ -37,7 +37,7 @@ def plotrocmany(y_true, y_pred_list, name_list):
     for i, color in zip(range(N), colors):  
         j=int(i)
         fpr[j], tpr[j], thrd[j] = roc_curve([int(k) for k in y_true],\
-         [ int(k) for k in y_pred_list[j]])
+         [ int(round(float(k))) for k in y_pred_list[j]])
         roc_auc[j] = auc(fpr[j], tpr[j])
 
         plt.plot(fpr[j], tpr[j], color=color,
@@ -56,10 +56,10 @@ def plotrocmany(y_true, y_pred_list, name_list):
 
 def plotroc(train_gt, train_predict, test_gt, test_predict):
     fpr, tpr, thresholds = roc_curve([int(i) for i in train_gt],
-     [ int(i) for i in train_predict])
+     [ int(round(float(i))) for i in train_predict])
     roc_auc = auc(fpr, tpr)
     fpr2, tpr2, thresholds = roc_curve([int(i) for i in test_gt],
-     [ int(i) for i in test_predict])
+     [ int(round(float(i))) for i in test_predict])
     roc_auc2 = auc(fpr2, tpr2)
 
     plt.figure()
@@ -194,12 +194,12 @@ def latent_factor(training_data, matrix, user_rankings, item_rankings, learn=0.0
 
         new_matrix = np.dot(Q, np.transpose(P))
 
-        if t%10 ==0:
+        if t%5 ==0:
             predict_result = predict_from_matrix(new_matrix, user_rankings, item_rankings,[ data[:2] for data in training_data])
             #print predict_result
             print 'rmse of this epoch', t, rmse(predict_result,[ data[2] for data in training_data])
 
-    #write_file("cf_recovered_matrix.txt", new_matrix)
+    #write_file("cf_recovered_matrix.txt", np.asarray(new_matrix).reshape(len(users), len(items)))
     return new_matrix
 
 def predict_from_matrix(matrix, user_rankings, item_rankings, data):
@@ -207,6 +207,7 @@ def predict_from_matrix(matrix, user_rankings, item_rankings, data):
     users, items = [ i for i in user_rankings.keys()], [ i for i in item_rankings.keys()]
     avg_user_rankings, overall_user_ranking = get_avg_rankings(user_rankings)
     avg_item_rankings, overall_item_ranking = get_avg_rankings(item_rankings)
+    
     for target_user, target_item in data:
         if target_user in users and target_item in items:
             predict_value = matrix[users.index(target_user)][items.index(target_item)]
@@ -215,4 +216,5 @@ def predict_from_matrix(matrix, user_rankings, item_rankings, data):
             item_bias = avg_item_rankings[target_item] - overall_item_ranking if target_item in avg_item_rankings else 0.0
             predict_value = overall_item_ranking + user_bias + item_bias
         result.append(predict_value)
+        
     return result
