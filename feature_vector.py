@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import jaccard_similarity_score
 from multiprocessing.pool import ThreadPool
 from difflib import SequenceMatcher
+import pdb
 
 def stringsimilartest(a, b):
     return SequenceMatcher(None, a, b).ratio()
@@ -323,7 +324,7 @@ def process_data(training_data, testing_data, testing_result_data, N,\
             if kc not in kc_list:
                 kc_list.append(kc)
 
-        if IsCondenseVecMode==True:
+        if IsCondenseVecMode > 0:
             #CFAR
             problem_step = (problem_name, step_name)
             student_problem = (studentId, problem_name)
@@ -389,7 +390,7 @@ def process_data(training_data, testing_data, testing_result_data, N,\
                 student_kc_dict_sum[student_kcs]=1    
                 student_kc_temporal[student_kcs]=[i]  
 
-            if 1: #float(training_data[i][10]) >= 0:
+            if float(training_data[i][10]) >= 0:
                 day_list.append(day_list[-1])
             else:
                 day_list.append(day_list[-1]+1)
@@ -417,8 +418,8 @@ def process_data(training_data, testing_data, testing_result_data, N,\
     maxtrainID = int(training_data[N-1][0])
 
     #print problem_name_list
-    print "#of unique item in each categories: ",len(studentId_list), len(unit_list),\
-        len(section_list), len(problem_name_list), len(step_name_list), len(kc_list), len(kc_list_raw)
+    #print "#of unique item in each categories: ",len(studentId_list), len(unit_list),\
+        #len(section_list), len(problem_name_list), len(step_name_list), len(kc_list), len(kc_list_raw)
 
     # do it in multi-thread
     # NumOfCore=4
@@ -459,6 +460,8 @@ def myknndist(x, y):
     return np.sum((x-y)**2)
 
 def main(arg):
+    #pdb.set_trace()
+    numpy.seterr(all='raise')
     dataset = arg[1] #'algebra_2005_2006'
     start = time.time()
     training_data, testing_data, testing_result_data = load_data(dataset)
@@ -467,10 +470,11 @@ def main(arg):
 
     start = time.time()
     rows, CFA_list, testing_rows, test_CFA = process_data(training_data,\
-     testing_data, testing_result_data, 50000, True, 0)
+     testing_data, testing_result_data, 50000, False, 2)
     end = time.time()
     print "Time to process data", end-start , " sec"   
-    print len(rows),len(CFA_list),len(testing_rows),len(rows[0])
+    print 'Training rows:', len(rows),'Testing rows:', len(testing_rows), \
+    '# of features:', len(rows[0])
 
     #print rows[:200]
     #print testing_rows[:200]
@@ -491,9 +495,10 @@ def main(arg):
     #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
-    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, p=2)
+    #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, p=2)
 
     #clf = RandomForestClassifier(n_estimators=100,n_jobs=-1, verbose=True)
+    clf = svm.LinearSVC(verbose=True,  C=1.0)
     #clf = svm.SVC(verbose=True, cache_size=5000, C=1.0)
     #clf = tree.DecisionTreeClassifier()
 
@@ -519,8 +524,8 @@ def main(arg):
     print "Time to do prediction of 1.5k self-test", end-start, " sec"
 
     #print "Mean accuracy" , clf.score(rows, CFA_list)
-    print "first 50 items of predict: ", [int(i) for i in predict_result[:50]]
-    print "first 50 items of GT: ", [int(i) for i in CFA_list[:50]]
+    print "first 30 items of predict: ", [int(i) for i in predict_result[:30]]
+    print "first 30 items of GT: ", [int(i) for i in CFA_list[:30]]
     predict_result = [ float(i) for i in predict_result]
     #training_error = rmse(predict_result, [ float(i) for i in CFA_list[:1500]])
     Classifier_Eval(CFA_list[:1500], predict_result, True)
@@ -539,8 +544,8 @@ def main(arg):
     end = time.time()
     print "Time to do prediction of testing rows", end-start, " sec"    
 
-    print "first 50 items of test predict: ",[int(i) for i in predict_test_result[:50]]
-    print "first 50 items of test GT: ", [int(i) for i in test_CFA[:50]]
+    print "first 30 items of test predict: ",[int(i) for i in predict_test_result[:30]]
+    print "first 30 items of test GT: ", [int(i) for i in test_CFA[:30]]
 
     predict_test_result = [ float(i) for i in predict_test_result]
     Classifier_Eval(test_CFA, predict_test_result, False)
