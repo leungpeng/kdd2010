@@ -1,3 +1,10 @@
+# Installation
+Python 2.7.11 or above
+
+Package required: Scikit, matplotlib, numpy 
+
+We recommand user to install Anaconda 4.2.0 or above
+
 # Folder structure
 ```ls
 .
