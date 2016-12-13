@@ -176,7 +176,7 @@ def get_feature_vectors(training_data, IsCondenseVecMode, IsSkipRowNotYetTrain, 
                 student_unit_cfar = numpy.mean(student_unit_dict.values())
     		
             student_kc = (dataset[i][1], dataset[i][len(dataset[i])-2])
-            student_kc_temporal = [0,0,0] 
+            student_kc_temporal = [0,0] 
             memory=[0,0,0,0] #[1day, 1week, 1 month, >1 month]
 
             if student_kc_dict.has_key(student_kc):
@@ -215,8 +215,8 @@ def get_feature_vectors(training_data, IsCondenseVecMode, IsSkipRowNotYetTrain, 
                         cfa_mean=cfa_mean+ int(training_data[rowindex][13])
                         hint_mean=hint_mean+int(training_data[rowindex][15])
                     cfa_mean = float(cfa_mean)/len(historyitemlist)
-                    hint_mean = float(hint_mean)/len(historyitemlist)
-                    student_kc_temporal=[cfa_mean, hint_mean, 1]
+                    #hint_mean = float(hint_mean)/len(historyitemlist)
+                    student_kc_temporal=[cfa_mean, 1]
             else:
                 student_kc_cfar = numpy.mean(student_kc_dict.values())
                 					
@@ -228,7 +228,7 @@ def get_feature_vectors(training_data, IsCondenseVecMode, IsSkipRowNotYetTrain, 
                     oppsum=oppsum+int(opp)
                 except ValueError:
                     oppsum=oppsum
-            oppsum=float(oppsum)/200.0
+            oppsum=float(oppsum)/(float(oppsum)+1)
 
         #print problem_hierarchy_feature
 
@@ -241,7 +241,7 @@ def get_feature_vectors(training_data, IsCondenseVecMode, IsSkipRowNotYetTrain, 
              problem_view_feature + step_name_feature + kc_feature + opp_feature +
              [student_cfar] + [step_cfar] + [problem_name_cfar] + [kc_cfar] +
              [problem_step_cfar] + [student_problem_cfar] + [student_unit_cfar] + [student_kc_cfar] +
-             student_kc_temporal + memory)
+             student_kc_temporal + memory + [oppsum])
 
         else:
             rows.append(problem_view_feature +
@@ -470,7 +470,7 @@ def main(arg):
 
     start = time.time()
     rows, CFA_list, testing_rows, test_CFA = process_data(training_data,\
-     testing_data, testing_result_data, 50000, False, 2)
+     testing_data, testing_result_data, 100000, False, 2)
     end = time.time()
     print "Time to process data", end-start , " sec"   
     print 'Training rows:', len(rows),'Testing rows:', len(testing_rows), \
@@ -484,8 +484,8 @@ def main(arg):
     process = psutil.Process(os.getpid())
     print "RAM usage (MB):", process.memory_info().rss/1024/1024
 
-    #write_file("preprocessed_train.txt", rows)
-    #write_file("preprocessed_test.txt", testing_rows)
+    write_file("preprocessed_train.txt", rows)
+    write_file("preprocessed_test.txt", testing_rows)
 
     start = time.time()
 
@@ -495,10 +495,10 @@ def main(arg):
     #clf = linear_model.LogisticRegressionCV(n_jobs=-1, verbose=True)
 
     #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, metric='pyfunc', func=myknndist)
-    #clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=5, p=2)
+    clf = KNeighborsClassifier(n_jobs=-1, weights='distance', n_neighbors=10, p=2)
 
     #clf = RandomForestClassifier(n_estimators=100,n_jobs=-1, verbose=True)
-    clf = svm.LinearSVC(verbose=True,  C=1.0)
+    #clf = svm.LinearSVC(verbose=True,  C=1.0)
     #clf = svm.SVC(verbose=True, cache_size=5000, C=1.0)
     #clf = tree.DecisionTreeClassifier()
 
