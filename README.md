@@ -100,6 +100,15 @@ python cf.py bridge_to_algebra_2006_2007
 | algebra_2006_2007 | 0.411450169266 | 0.4043896756 |
 | bridge_to_algebra_2006_2007 | 0.311035090946 | 0.365743405094 |
 
+
+| Dataset      | Training    | Testing  |N|
+| -------------|-------------|----------|-|
+| bridge_to_algebra_2006_2007 | 0.326314365008 | 0.377274126364 |100k|
+| bridge_to_algebra_2006_2007 | 0.338645485041 | 0.377446831397 |150k|
+| bridge_to_algebra_2006_2007 | 0.332554420163 | 0.373803269454 |250k|
+| bridge_to_algebra_2006_2007 | 0.316869374999 | 0.377101342234 |500k|
+
+
 ## (1) Feature vector based method (OneHotEncoding)
 ```sh
 # Feature : student(weight=50), unit, section, processed step_name, kc

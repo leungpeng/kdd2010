@@ -41,7 +41,7 @@ def training(data, learnrate, regular, numofstep):
 def main(arg):
     dataset = arg[1] #'algebra_2005_2006'
     training_data, testing_data, testing_result_data = load_data(dataset)
-    
+
     #shuffle the training data
     #training_data = random.shuffle(training_data)
 
