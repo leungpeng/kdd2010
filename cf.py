@@ -21,7 +21,7 @@ def training(data, learnrate, regular, numofstep):
     students = {}
     problems = {}
     testing_sample = []
-    N = 200000#len(data)
+    N = len(data)
 
     print "Num Of Lines to train: ", N
     for i in range(1,N):

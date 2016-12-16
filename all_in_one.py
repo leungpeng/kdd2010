@@ -12,7 +12,7 @@ from cf import training, predict_from_matrix
 def main(arg):
     dataset = arg[1] #'algebra_2005_2006'
     training_data, testing_data, testing_result_data = load_data(dataset)
-    NumOfLineToTrain = 50000 #len(training_data)
+    NumOfLineToTrain = 300000 #len(training_data)
 
     # mode0: normal, 1: normal+condensed, 2: only condensed
     Feature_vector_mode = 0
@@ -58,7 +58,7 @@ def main(arg):
     learnrate = 0.01; regular = 0.02; numofstep = 100
     matrix, students, problems, testing_sample = training(training_data[:NumOfLineToTrain], learnrate, regular, numofstep)
     y_pred_list.append(predict_from_matrix(matrix, students, problems,\
-        [ (data[1].upper(), data[3].upper()) for data in testing_data[1:]]))
+        [ (data[1].upper(), process_step_name(data[5].upper())) for data in testing_data[1:]]))
     end = time.time()
     print "Time elapse: ", end-start, " sec"
 

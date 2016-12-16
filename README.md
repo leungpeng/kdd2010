@@ -1,7 +1,7 @@
 # Installation
 Python 2.7.11 or above
 
-Package required: Scikit, matplotlib, numpy 
+Package required: Scikit, matplotlib, numpy
 
 We recommand user to install Anaconda 4.2.0 or above
 
@@ -31,6 +31,15 @@ python all_in_one.py algebra_2005_2006
 python all_in_one.py algebra_2006_2007
 python all_in_one.py bridge_to_algebra_2006_2007
 ```
+| bridge_to_algebra_2006_2007, NumberOfLineToTrain=200k, feature_vec=normal    | Test rmse   |
+| ----------|-------------|
+| KNN(k=5) | 0.4173|
+| RandomForest(tree=50) | 0.6089|
+| LinearSVM(C=1.0) | 0.6674|
+| Collabrative filtering(Rate=0.001, step=50, reg=0.02) | 0.3762 |
+ROC curve:
+![alt tag](https://raw.githubusercontent.com/leungpeng/kdd2010/master/ROC/200k.png)
+
 | bridge_to_algebra_2006_2007, NumberOfLineToTrain=100k, feature_vec=normal    | Test rmse   |
 | ----------|-------------|
 | KNN(k=5) | 0.4225|
@@ -40,7 +49,7 @@ python all_in_one.py bridge_to_algebra_2006_2007
 |Collabrative filtering(Rate=0.001, step=50, reg=0.02) | 0.3982 |
 
 ROC curve:
-![alt tag](https://raw.githubusercontent.com/leungpeng/cmsc5724_project/master/roc_bridge_to_0607_100kline.png?token=AQjFyqlXh219YLOj_cTbkU-_Tr9T9lONks5YWAR2wA%3D%3D)
+![alt tag](https://raw.githubusercontent.com/leungpeng/kdd2010/master/roc_bridge_to_0607_100kline.png)
 
 | bridge_to_algebra_2006_2007, NumberOfLineToTrain=50k, feature_vec=normal    | Test rmse   |
 | ----------|-------------|
@@ -49,7 +58,7 @@ ROC curve:
 |Collabrative filtering(Rate=0.01, step=50, reg=0.02) | 0.889 |
 
 ROC curve:
-![alt tag](https://raw.githubusercontent.com/leungpeng/cmsc5724_project/master/roc_bridge_to0607_50kline.png?token=AQjFyk5AuyJfWcbGlnQU0AIDTSCmTtSeks5YVpnLwA%3D%3D)
+![alt tag](https://raw.githubusercontent.com/leungpeng/kdd2010/master/roc_bridge_to0607_50kline.png)
 
 
 ## Random method
