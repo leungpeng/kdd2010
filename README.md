@@ -31,6 +31,15 @@ python all_in_one.py algebra_2005_2006
 python all_in_one.py algebra_2006_2007
 python all_in_one.py bridge_to_algebra_2006_2007
 ```
+| bridge_to_algebra_2006_2007, NumberOfLineToTrain=300k, feature_vec=normal    | Test rmse   |
+| ----------|-------------|
+| KNN(k=5) | 0.4417|
+| RandomForest(tree=50) | 0.6338|
+| LinearSVM(C=1.0) | 0.6500|
+| Collabrative filtering(Rate=0.001, step=50, reg=0.02) | 0.3685 |
+ROC curve:
+![alt tag](https://raw.githubusercontent.com/leungpeng/kdd2010/master/ROC/300k.png)
+
 | bridge_to_algebra_2006_2007, NumberOfLineToTrain=200k, feature_vec=normal    | Test rmse   |
 | ----------|-------------|
 | KNN(k=5) | 0.4173|
